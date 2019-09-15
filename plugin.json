@@ -8,14 +8,14 @@
   "authorEmail": "contact@vcvrack.com",
   "authorUrl": "https://vcvrack.com/",
   "pluginUrl": "",
-  "manualUrl": "",
-  "sourceUrl": "",
+  "manualUrl": "https://github.com/VCVRack/VCV-Prototype/blob/master/README.md",
+  "sourceUrl": "https://github.com/VCVRack/VCV-Prototype",
   "donateUrl": "",
   "modules": [
     {
       "slug": "Prototype",
       "name": "Prototype",
-      "description": "",
+      "description": "Run scripting languages for prototyping, learning, and hacking",
       "tags": [
         "External"
       ]
