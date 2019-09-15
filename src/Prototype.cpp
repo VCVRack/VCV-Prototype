@@ -56,10 +56,6 @@ struct Prototype : Module {
 		clearScriptEngine();
 	}
 
-	void onReset() override {
-		setScriptString(path, script);
-	}
-
 	void process(const ProcessArgs& args) override {
 		if (!scriptEngine)
 			return;
@@ -155,6 +151,7 @@ struct Prototype : Module {
 			this->script = buffer.str();
 		}
 		catch (const std::runtime_error& err) {
+			WARN("Script %s not found, using stored script string", this->path.c_str());
 		}
 		// Run script
 		if (this->script == "") {
@@ -186,6 +183,10 @@ struct Prototype : Module {
 			std::string script = std::string(json_string_value(scriptJ), json_string_length(scriptJ));
 			setScriptString(path, script);
 		}
+	}
+
+	void reloadScript() {
+		setScriptString(path, script);
 	}
 };
 
@@ -264,6 +265,14 @@ struct PrototypeDisplay : LedDisplay {
 };
 
 
+struct ReloadScriptItem : MenuItem {
+	Prototype* module;
+	void onAction(const event::Action& e) override {
+		module->reloadScript();
+	}
+};
+
+
 struct PrototypeWidget : ModuleWidget {
 	PrototypeWidget(Prototype* module) {
 		setModule(module);
@@ -318,6 +327,17 @@ struct PrototypeWidget : ModuleWidget {
 		display->setModule(module);
 		addChild(display);
 	}
+
+	void appendContextMenu(Menu* menu) override {
+		Prototype* module = dynamic_cast<Prototype*>(this->module);
+
+		menu->addChild(new MenuEntry);
+
+		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
+		reloadScriptItem->module = module;
+		menu->addChild(reloadScriptItem);
+	}
+
 };
 
 
