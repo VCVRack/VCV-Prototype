@@ -55,33 +55,33 @@ function process(block) {
 	*/
 	block.bufferSize
 
-	/** Voltage of the input port of row `rowIndex`. Read-only.
+	/** Voltage of the input port of column `i`. Read-only.
 	*/
-	block.inputs[rowIndex][bufferIndex] // 0.0
+	block.inputs[i][bufferIndex] // 0.0
 
-	/** Voltage of the output port of row `rowIndex`. Writable.
+	/** Voltage of the output port of column `i`. Writable.
 	*/
-	block.outputs[rowIndex][bufferIndex] // 0.0
+	block.outputs[i][bufferIndex] // 0.0
 
-	/** Value of the knob of row `rowIndex`. Between 0 and 1. Read-only.
+	/** Value of the knob of column `i`. Between 0 and 1. Read-only.
 	*/
-	block.knobs[rowIndex] // 0.0
+	block.knobs[i] // 0.0
 
-	/** Pressed state of the switch of row `rowIndex`. Read-only.
+	/** Pressed state of the switch of column `i`. Read-only.
 	*/
-	block.switches[rowIndex] // false
+	block.switches[i] // false
 
-	/** Brightness of the RGB LED of row `rowIndex`, between 0 and 1. Writable.
+	/** Brightness of the RGB LED of column `i`, between 0 and 1. Writable.
 	*/
-	block.lights[rowIndex][0] // 0.0 (red)
-	block.lights[rowIndex][1] // 0.0 (green)
-	block.lights[rowIndex][2] // 0.0 (blue)
+	block.lights[i][0] // 0.0 (red)
+	block.lights[i][1] // 0.0 (green)
+	block.lights[i][2] // 0.0 (blue)
 
-	/** Brightness of the switch RGB LED of row `rowIndex`. Writable.
+	/** Brightness of the switch RGB LED of column `i`. Writable.
 	*/
-	block.switchLights[rowIndex][0] // 0.0 (red)
-	block.switchLights[rowIndex][1] // 0.0 (green)
-	block.switchLights[rowIndex][2] // 0.0 (blue)
+	block.switchLights[i][0] // 0.0 (red)
+	block.switchLights[i][1] // 0.0 (green)
+	block.switchLights[i][2] // 0.0 (blue)
 }
 ```
 

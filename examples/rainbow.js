@@ -33,8 +33,10 @@ function process(block) {
 	for (var i = 0; i < 6; i++) {
 		var h = (1 - i / 6 + phase) % 1
 		var rgb = hsvToRgb(h, 1, 1)
-		block.lights[i] = rgb
-		block.switchLights[i] = rgb
+		for (var c = 0; c < 3; c++) {
+			block.lights[i][c] = rgb[c]
+			block.switchLights[i][c] = rgb[c]
+		}
 		block.outputs[i][0] = Math.sin(2 * Math.PI * h) * 5 + 5
 	}
 }

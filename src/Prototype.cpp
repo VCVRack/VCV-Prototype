@@ -128,7 +128,7 @@ struct Prototype : Module {
 		// Reset settings
 		frameDivider = 32;
 		frame = 0;
-		block.bufferSize = 1;
+		block = ScriptEngine::ProcessBlock();
 		bufferIndex = 0;
 	}
 
@@ -250,6 +250,20 @@ struct MessageChoice : LedDisplayChoice {
 	void step() override {
 		text = module ? module->message : "";
 	}
+
+	void draw(const DrawArgs& args) override {
+		nvgScissor(args.vg, RECT_ARGS(args.clipBox));
+		if (font->handle >= 0) {
+			nvgFillColor(args.vg, color);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgTextLetterSpacing(args.vg, 0.0);
+			nvgTextLineHeight(args.vg, 1.08);
+
+			nvgFontSize(args.vg, 12);
+			nvgTextBox(args.vg, textOffset.x, textOffset.y, box.size.x - textOffset.x, text.c_str(), NULL);
+		}
+		nvgResetScissor(args.vg);
+	}
 };
 
 
@@ -272,6 +286,7 @@ struct PrototypeDisplay : LedDisplay {
 		MessageChoice* messageChoice = new MessageChoice;
 		messageChoice->box.pos = fileChoice->box.getBottomLeft();
 		messageChoice->box.size.x = box.size.x;
+		messageChoice->box.size.y = box.size.y - messageChoice->box.pos.y;
 		messageChoice->module = module;
 		addChild(messageChoice);
 	}

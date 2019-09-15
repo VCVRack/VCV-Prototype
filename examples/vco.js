@@ -19,7 +19,7 @@ function process(block) {
 	var freq = 261.6256 * Math.pow(2, pitch)
 	display("Freq: " + freq.toFixed(3) + " Hz")
 
-	// Set all output samples in block
+	// Set all samples in output buffer
 	var deltaPhase = config.frameDivider * block.sampleTime * freq
 	for (var i = 0; i < block.bufferSize; i++) {
 		// Accumulate phase
