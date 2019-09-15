@@ -3,7 +3,6 @@
 
 
 static const int NUM_ROWS = 6;
-static const int MAX_BUFFER_SIZE = 4096;
 
 
 struct Prototype;
@@ -11,10 +10,6 @@ struct Prototype;
 
 struct ScriptEngine {
 	// Virtual methods for subclasses
-	/** Constructor.
-	Return nonzero if failure, and set error message with setMessage().
-	*/
-	virtual int initialize() {return 0;}
 	virtual ~ScriptEngine() {}
 	virtual std::string getEngineName() {return "";}
 	/** Executes the script.
@@ -26,9 +21,8 @@ struct ScriptEngine {
 	struct ProcessBlock {
 		float sampleRate = 0.f;
 		float sampleTime = 0.f;
-		int bufferSize = 1;
-		float inputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
-		float outputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
+		float inputs[NUM_ROWS] = {};
+		float outputs[NUM_ROWS] = {};
 		float knobs[NUM_ROWS] = {};
 		bool switches[NUM_ROWS] = {};
 		float lights[NUM_ROWS][3] = {};
@@ -39,12 +33,11 @@ struct ScriptEngine {
 	*/
 	virtual int process(ProcessBlock& block) {return 0;}
 
-	// Communication with Prototype module
+	// Communication with Prototype module.
+	// These cannot be called from the constructor, so initialize in the run() method.
 	void setMessage(const std::string& message);
 	int getFrameDivider();
 	void setFrameDivider(int frameDivider);
-	int getBufferSize();
-	void setBufferSize(int bufferSize);
 	// private
 	Prototype* module;
 };

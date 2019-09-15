@@ -40,7 +40,6 @@ struct Prototype : Module {
 	int frame = 0;
 	int frameDivider;
 	ScriptEngine::ProcessBlock block;
-	int blockIndex = 0;
 
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -72,16 +71,7 @@ struct Prototype : Module {
 
 		// Inputs
 		for (int i = 0; i < NUM_ROWS; i++)
-			block.inputs[i][blockIndex] = inputs[IN_INPUTS + i].getVoltage();
-		// Outputs
-		for (int i = 0; i < NUM_ROWS; i++)
-			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i][blockIndex]);
-
-		// Block divider
-		if (++blockIndex < block.bufferSize)
-			return;
-		blockIndex = 0;
-
+			block.inputs[i] = inputs[IN_INPUTS + i].getVoltage();
 		// Params
 		for (int i = 0; i < NUM_ROWS; i++)
 			block.knobs[i] = params[KNOB_PARAMS + i].getValue();
@@ -103,6 +93,9 @@ struct Prototype : Module {
 			}
 		}
 
+		// Outputs
+		for (int i = 0; i < NUM_ROWS; i++)
+			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i]);
 		// Lights
 		for (int i = 0; i < NUM_ROWS; i++)
 			for (int c = 0; c < 3; c++)
@@ -117,17 +110,18 @@ struct Prototype : Module {
 			delete scriptEngine;
 			scriptEngine = NULL;
 		}
-		// Reset outputs because they might hold old values
+		// Reset outputs and lights because they might hold old values
 		for (int i = 0; i < NUM_ROWS; i++)
 			outputs[OUT_OUTPUTS + i].setVoltage(0.f);
 		for (int i = 0; i < NUM_ROWS; i++)
-			lights[LIGHT_LIGHTS + i].setBrightness(0.f);
+			for (int c = 0; c < 3; c++)
+				lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(0.f);
 		for (int i = 0; i < NUM_ROWS; i++)
-			lights[SWITCH_LIGHTS + i].setBrightness(0.f);
+			for (int c = 0; c < 3; c++)
+				lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(0.f);
 		std::memset(block.inputs, 0, sizeof(block.inputs));
 		// Reset settings
 		frameDivider = 32;
-		block.bufferSize = 1;
 	}
 
 	void setScriptString(std::string path, std::string script) {
@@ -150,13 +144,7 @@ struct Prototype : Module {
 		this->path = path;
 		this->script = script;
 		this->engineName = scriptEngine->getEngineName();
-		// Initialize ScriptEngine
 		scriptEngine->module = this;
-		if (scriptEngine->initialize()) {
-			// Error message should have been set by ScriptEngine
-			clearScriptEngine();
-			return;
-		}
 		// Read file
 		std::ifstream file;
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -210,12 +198,6 @@ int ScriptEngine::getFrameDivider() {
 }
 void ScriptEngine::setFrameDivider(int frameDivider) {
 	module->frameDivider = frameDivider;
-}
-int ScriptEngine::getBufferSize() {
-	return module->block.bufferSize;
-}
-void ScriptEngine::setBufferSize(int bufferSize) {
-	module->block.bufferSize = bufferSize;
 }
 
 
