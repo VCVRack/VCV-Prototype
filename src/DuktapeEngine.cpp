@@ -50,14 +50,14 @@ struct DuktapeEngine : ScriptEngine {
 		duk_push_c_function(ctx, native_display, 1);
 		duk_put_global_string(ctx, "display");
 
-		// config
+		// config: Set defaults
 		duk_idx_t configIdx = duk_push_object(ctx);
 		{
 			// frameDivider
-			duk_push_int(ctx, getFrameDivider());
+			duk_push_int(ctx, 32);
 			duk_put_prop_string(ctx, configIdx, "frameDivider");
 			// bufferSize
-			duk_push_int(ctx, getBufferSize());
+			duk_push_int(ctx, 1);
 			duk_put_prop_string(ctx, configIdx, "bufferSize");
 		}
 		duk_put_global_string(ctx, "config");
@@ -82,7 +82,7 @@ struct DuktapeEngine : ScriptEngine {
 		// Ignore return value
 		duk_pop(ctx);
 
-		// Get config
+		// config: Read values
 		duk_get_global_string(ctx, "config");
 		{
 			// frameDivider
@@ -91,7 +91,8 @@ struct DuktapeEngine : ScriptEngine {
 			duk_pop(ctx);
 			// bufferSize
 			duk_get_prop_string(ctx, -1, "bufferSize");
-			setBufferSize(duk_get_int(ctx, -1));
+			int bufferSize = duk_get_int(ctx, -1);
+			block->bufferSize = rack::clamp(bufferSize, 1, MAX_BUFFER_SIZE);
 			duk_pop(ctx);
 		}
 		duk_pop(ctx);
@@ -106,69 +107,61 @@ struct DuktapeEngine : ScriptEngine {
 		// block (keep on stack)
 		duk_idx_t blockIdx = duk_push_object(ctx);
 		{
-			int bufferSize = getBufferSize();
-
 			// inputs
 			duk_idx_t inputsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t inputIdx = duk_push_array(ctx);
-				for (int j = 0; j < bufferSize; j++) {
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_index(ctx, inputIdx, j);
-				}
+				duk_push_external_buffer(ctx);
+				duk_config_buffer(ctx, -1, block->inputs[i], sizeof(float) * block->bufferSize);
+				duk_push_buffer_object(ctx, -1, 0, sizeof(float) * block->bufferSize, DUK_BUFOBJ_FLOAT32ARRAY);
 				duk_put_prop_index(ctx, inputsIdx, i);
+				duk_pop(ctx);
 			}
 			duk_put_prop_string(ctx, blockIdx, "inputs");
 
 			// outputs
 			duk_idx_t outputsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t outputIdx = duk_push_array(ctx);
-				for (int j = 0; j < bufferSize; j++) {
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_index(ctx, outputIdx, j);
-				}
+				duk_push_external_buffer(ctx);
+				duk_config_buffer(ctx, -1, block->outputs[i], sizeof(float) * block->bufferSize);
+				duk_push_buffer_object(ctx, -1, 0, sizeof(float) * block->bufferSize, DUK_BUFOBJ_FLOAT32ARRAY);
 				duk_put_prop_index(ctx, outputsIdx, i);
+				duk_pop(ctx);
 			}
 			duk_put_prop_string(ctx, blockIdx, "outputs");
 
 			// knobs
-			duk_idx_t knobsIdx = duk_push_array(ctx);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, 0.0);
-				duk_put_prop_index(ctx, knobsIdx, i);
-			}
+			duk_push_external_buffer(ctx);
+			duk_config_buffer(ctx, -1, block->knobs, sizeof(float) * NUM_ROWS);
+			duk_push_buffer_object(ctx, -1, 0, sizeof(float) * NUM_ROWS, DUK_BUFOBJ_FLOAT32ARRAY);
 			duk_put_prop_string(ctx, blockIdx, "knobs");
+			duk_pop(ctx);
 
 			// switches
-			duk_idx_t switchesIdx = duk_push_array(ctx);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, 0.0);
-				duk_put_prop_index(ctx, switchesIdx, i);
-			}
+			duk_push_external_buffer(ctx);
+			duk_config_buffer(ctx, -1, block->switches, sizeof(bool) * NUM_ROWS);
+			duk_push_buffer_object(ctx, -1, 0, sizeof(bool) * NUM_ROWS, DUK_BUFOBJ_UINT8ARRAY);
 			duk_put_prop_string(ctx, blockIdx, "switches");
+			duk_pop(ctx);
 
 			// lights
 			duk_idx_t lightsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t lightIdx = duk_push_array(ctx);
-				for (int c = 0; c < 3; c++) {
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_index(ctx, lightIdx, c);
-				}
+				duk_push_external_buffer(ctx);
+				duk_config_buffer(ctx, -1, block->lights[i], sizeof(float) * 3);
+				duk_push_buffer_object(ctx, -1, 0, sizeof(float) * 3, DUK_BUFOBJ_FLOAT32ARRAY);
 				duk_put_prop_index(ctx, lightsIdx, i);
+				duk_pop(ctx);
 			}
 			duk_put_prop_string(ctx, blockIdx, "lights");
 
 			// switchLights
 			duk_idx_t switchLightsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t switchLightIdx = duk_push_array(ctx);
-				for (int c = 0; c < 3; c++) {
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_index(ctx, switchLightIdx, c);
-				}
+				duk_push_external_buffer(ctx);
+				duk_config_buffer(ctx, -1, block->switchLights[i], sizeof(float) * 3);
+				duk_push_buffer_object(ctx, -1, 0, sizeof(float) * 3, DUK_BUFOBJ_FLOAT32ARRAY);
 				duk_put_prop_index(ctx, switchLightsIdx, i);
+				duk_pop(ctx);
 			}
 			duk_put_prop_string(ctx, blockIdx, "switchLights");
 		}
@@ -176,49 +169,21 @@ struct DuktapeEngine : ScriptEngine {
 		return 0;
 	}
 
-	int process(ProcessBlock& block) override {
+	int process() override {
 		// block
 		duk_idx_t blockIdx = duk_get_top(ctx) - 1;
 		{
 			// sampleRate
-			duk_push_number(ctx, block.sampleRate);
+			duk_push_number(ctx, block->sampleRate);
 			duk_put_prop_string(ctx, blockIdx, "sampleRate");
 
 			// sampleTime
-			duk_push_number(ctx, block.sampleTime);
+			duk_push_number(ctx, block->sampleTime);
 			duk_put_prop_string(ctx, blockIdx, "sampleTime");
 
 			// bufferSize
-			duk_push_int(ctx, block.bufferSize);
+			duk_push_int(ctx, block->bufferSize);
 			duk_put_prop_string(ctx, blockIdx, "bufferSize");
-
-			// inputs
-			duk_get_prop_string(ctx, blockIdx, "inputs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_get_prop_index(ctx, -1, i);
-				for (int j = 0; j < block.bufferSize; j++) {
-					duk_push_number(ctx, block.inputs[i][j]);
-					duk_put_prop_index(ctx, -2, j);
-				}
-				duk_pop(ctx);
-			}
-			duk_pop(ctx);
-
-			// knobs
-			duk_get_prop_string(ctx, blockIdx, "knobs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, block.knobs[i]);
-				duk_put_prop_index(ctx, -2, i);
-			}
-			duk_pop(ctx);
-
-			// switches
-			duk_get_prop_string(ctx, blockIdx, "switches");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_boolean(ctx, block.switches[i]);
-				duk_put_prop_index(ctx, -2, i);
-			}
-			duk_pop(ctx);
 		}
 
 		// Duplicate process function
@@ -235,48 +200,6 @@ struct DuktapeEngine : ScriptEngine {
 		}
 		// return value
 		duk_pop(ctx);
-
-		// block
-		{
-			// outputs
-			duk_get_prop_string(ctx, -1, "outputs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_get_prop_index(ctx, -1, i);
-				for (int j = 0; j < block.bufferSize; j++) {
-					duk_get_prop_index(ctx, -1, j);
-					block.outputs[i][j] = duk_get_number(ctx, -1);
-					duk_pop(ctx);
-				}
-				duk_pop(ctx);
-			}
-			duk_pop(ctx);
-
-			// lights
-			duk_get_prop_string(ctx, -1, "lights");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_get_prop_index(ctx, -1, i);
-				for (int c = 0; c < 3; c++) {
-					duk_get_prop_index(ctx, -1, c);
-					block.lights[i][c] = duk_get_number(ctx, -1);
-					duk_pop(ctx);
-				}
-				duk_pop(ctx);
-			}
-			duk_pop(ctx);
-
-			// switchLights
-			duk_get_prop_string(ctx, -1, "switchLights");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_get_prop_index(ctx, -1, i);
-				for (int c = 0; c < 3; c++) {
-					duk_get_prop_index(ctx, -1, c);
-					block.switchLights[i][c] = duk_get_number(ctx, -1);
-					duk_pop(ctx);
-				}
-				duk_pop(ctx);
-			}
-			duk_pop(ctx);
-		}
 
 		return 0;
 	}

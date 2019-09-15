@@ -20,7 +20,7 @@ function process(block) {
 	display("Freq: " + freq.toFixed(3) + " Hz")
 
 	// Set all output samples in block
-	var deltaPhase = block.sampleTime * config.frameDivider * freq
+	var deltaPhase = config.frameDivider * block.sampleTime * freq
 	for (var i = 0; i < block.bufferSize; i++) {
 		// Accumulate phase
 		phase += deltaPhase

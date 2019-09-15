@@ -1,3 +1,6 @@
+// Rainbow RGB LED example
+// by Andrew Belt
+
 // Call process() every 256 audio samples
 config.frameDivider = 256
 
@@ -37,5 +40,3 @@ function process(block) {
 }
 
 display("Hello, world!")
-
-// 12.2us

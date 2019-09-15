@@ -89,7 +89,7 @@ struct Prototype : Module {
 				std::lock_guard<std::mutex> lock(scriptMutex);
 				// Check for certain inside the mutex
 				if (scriptEngine) {
-					if (scriptEngine->process(block)) {
+					if (scriptEngine->process()) {
 						WARN("Script %s process() failed. Stopped script.", path.c_str());
 						clearScriptEngine();
 						return;
@@ -129,7 +129,6 @@ struct Prototype : Module {
 		frameDivider = 32;
 		frame = 0;
 		block.bufferSize = 1;
-		std::memset(block.inputs, 0, sizeof(block.inputs));
 		bufferIndex = 0;
 	}
 
@@ -152,10 +151,11 @@ struct Prototype : Module {
 			message = string::f("No engine for .%s extension", ext.c_str());
 			return;
 		}
+		scriptEngine->module = this;
+		scriptEngine->block = &block;
 		this->path = path;
 		this->script = script;
 		this->engineName = scriptEngine->getEngineName();
-		scriptEngine->module = this;
 		// Read file
 		std::ifstream file;
 		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -210,18 +210,8 @@ struct Prototype : Module {
 void ScriptEngine::setMessage(const std::string& message) {
 	module->message = message;
 }
-int ScriptEngine::getFrameDivider() {
-	return module->frameDivider;
-}
 void ScriptEngine::setFrameDivider(int frameDivider) {
 	module->frameDivider = frameDivider;
-}
-int ScriptEngine::getBufferSize() {
-	return module->block.bufferSize;
-}
-void ScriptEngine::setBufferSize(int bufferSize) {
-	bufferSize = clamp(bufferSize, 1, MAX_BUFFER_SIZE);
-	module->block.bufferSize = bufferSize;
 }
 
 
