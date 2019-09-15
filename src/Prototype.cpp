@@ -73,6 +73,7 @@ struct Prototype : Module {
 			// Check for certain inside the mutex
 			if (scriptEngine) {
 				if (scriptEngine->process(scriptArgs)) {
+					WARN("Script %s process() failed. Stopped script.", path.c_str());
 					clearScriptEngine();
 					return;
 				}
@@ -108,6 +109,7 @@ struct Prototype : Module {
 		clearScriptEngine();
 		// Get ScriptEngine from path extension
 		if (path == "") {
+			// Empty path means no script is requested. Fail silently.
 			return;
 		}
 		INFO("Loading script %s", path.c_str());

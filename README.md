@@ -23,7 +23,7 @@ display(message)
 For CV generators and processors, 256 is reasonable.
 For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate, which will capture 1ms-long triggers.
 For audio generators and processors, 1-8 is recommended, but it will consume lots of CPU.
-If this is too slow for your purposes, you should just write a C++ plugin.
+If this is too slow for your purposes, consider writing a C++ plugin, since native VCV Rack plugins are 10-100 faster.
 */
 config.frameDivider // 32
 
@@ -86,7 +86,7 @@ function process(args) {
 
 ## License
 
-All **source code** is copyright © 2019 Andrew Belt and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+All **source code** is copyright © 2019 VCV Prototype Maintainers and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
 The **panel graphics** in the `res` directory are copyright © 2019 [Grayscale](http://grayscale.info/) and licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 You may not distribute modified adaptations of these graphics.
