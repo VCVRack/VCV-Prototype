@@ -301,6 +301,33 @@ struct ReloadScriptItem : MenuItem {
 };
 
 
+struct SaveScriptItem : MenuItem {
+	Prototype* module;
+	void onAction(const event::Action& e) override {
+		if (module->script == "")
+			return;
+
+		std::string ext = string::filenameExtension(string::filename(module->path));
+		std::string dir = asset::plugin(pluginInstance, "examples");
+		std::string filename = "Untitled." + ext;
+		char* pathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
+		if (!pathC) {
+			return;
+		}
+		std::string path = pathC;
+		std::free(pathC);
+		// Add extension if user didn't specify one
+		std::string pathExt = string::filenameExtension(string::filename(path));
+		if (pathExt == "")
+			path += "." + ext;
+
+		std::ofstream f(path);
+		f << module->script;
+		module->path = path;
+	}
+};
+
+
 struct PrototypeWidget : ModuleWidget {
 	PrototypeWidget(Prototype* module) {
 		setModule(module);
@@ -364,6 +391,10 @@ struct PrototypeWidget : ModuleWidget {
 		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
 		reloadScriptItem->module = module;
 		menu->addChild(reloadScriptItem);
+
+		SaveScriptItem* saveScriptItem = createMenuItem<SaveScriptItem>("Save script as");
+		saveScriptItem->module = module;
+		menu->addChild(saveScriptItem);
 	}
 
 };
