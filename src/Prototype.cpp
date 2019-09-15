@@ -43,7 +43,7 @@ struct Prototype : Module {
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		for (int i = 0; i < NUM_ROWS; i++)
-			configParam(KNOB_PARAMS + i, 0.f, 1.f, 0.f, string::f("Knob %d", i + 1));
+			configParam(KNOB_PARAMS + i, 0.f, 1.f, 0.5f, string::f("Knob %d", i + 1));
 		for (int i = 0; i < NUM_ROWS; i++)
 			configParam(SWITCH_PARAMS + i, 0.f, 1.f, 0.f, string::f("Switch %d", i + 1));
 

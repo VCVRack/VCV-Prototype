@@ -29,7 +29,7 @@ function process(args) {
 		var rgb = hsvToRgb(h, 1, 1)
 		args.lights[i] = rgb
 		args.switchLights[i] = rgb
-		args.outputs[i] = Math.sin(2 * Math.PI * h) * 10
+		args.outputs[i] = Math.sin(2 * Math.PI * h) * 5 + 5
 	}
 }
 
