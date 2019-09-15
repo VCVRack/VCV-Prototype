@@ -18,26 +18,26 @@ struct ScriptEngine {
 	*/
 	virtual int run(const std::string& path, const std::string& script) {return 0;}
 
-	struct ProcessBlock {
-		float sampleRate = 0.f;
-		float sampleTime = 0.f;
-		float inputs[NUM_ROWS] = {};
-		float outputs[NUM_ROWS] = {};
-		float knobs[NUM_ROWS] = {};
-		bool switches[NUM_ROWS] = {};
-		float lights[NUM_ROWS][3] = {};
-		float switchLights[NUM_ROWS][3] = {};
+	struct ProcessArgs {
+		float sampleRate;
+		float sampleTime;
 	};
 	/** Calls the script's process() method.
 	Return nonzero if failure, and set error message with setMessage().
 	*/
-	virtual int process(ProcessBlock& block) {return 0;}
+	virtual int process(ProcessArgs& block) {return 0;}
 
 	// Communication with Prototype module.
-	// These cannot be called from the constructor, so initialize in the run() method.
+	// These cannot be called from your constructor, so initialize your engine in the run() method.
 	void setMessage(const std::string& message);
 	int getFrameDivider();
 	void setFrameDivider(int frameDivider);
+	float getInput(int index);
+	void setOutput(int index, float voltage);
+	float getKnob(int index);
+	bool getSwitch(int index);
+	void setLight(int index, int color, float brightness);
+	void setSwitchLight(int index, int color, float brightness);
 	// private
 	Prototype* module;
 };

@@ -1,5 +1,5 @@
-// Call process() every 128 audio samples
-config.frameDivider = 128
+// Call process() every 256 audio samples
+config.frameDivider = 256
 
 
 // From https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
@@ -25,14 +25,12 @@ function process(args) {
 	phase %= 1
 
 	for (var i = 0; i < 6; i++) {
-		var h = (i / 6 + phase) % 1
+		var h = (1 - i / 6 + phase) % 1
 		var rgb = hsvToRgb(h, 1, 1)
 		args.lights[i] = rgb
 		args.switchLights[i] = rgb
 		args.outputs[i] = Math.sin(2 * Math.PI * h) * 10
 	}
-
-	display(phase)
 }
 
 display("Hello, world!")

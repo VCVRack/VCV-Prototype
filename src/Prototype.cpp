@@ -31,15 +31,14 @@ struct Prototype : Module {
 		NUM_LIGHTS
 	};
 
+	std::string message;
 	std::string path;
 	std::string script;
 	std::string engineName;
-	ScriptEngine* scriptEngine = NULL;
 	std::mutex scriptMutex;
-	std::string message;
+	ScriptEngine* scriptEngine = NULL;
 	int frame = 0;
 	int frameDivider;
-	ScriptEngine::ProcessBlock block;
 
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -65,40 +64,20 @@ struct Prototype : Module {
 			return;
 		frame = 0;
 
-		// Inputs
-		for (int i = 0; i < NUM_ROWS; i++)
-			block.inputs[i] = inputs[IN_INPUTS + i].getVoltage();
-		// Params
-		for (int i = 0; i < NUM_ROWS; i++)
-			block.knobs[i] = params[KNOB_PARAMS + i].getValue();
-		for (int i = 0; i < NUM_ROWS; i++)
-			block.switches[i] = (params[SWITCH_PARAMS + i].getValue() > 0.f);
-
-		// Set other block parameters
-		block.sampleRate = args.sampleRate;
-		block.sampleTime = args.sampleTime;
+		ScriptEngine::ProcessArgs scriptArgs;
+		scriptArgs.sampleRate = args.sampleRate;
+		scriptArgs.sampleTime = args.sampleTime;
 
 		{
 			std::lock_guard<std::mutex> lock(scriptMutex);
 			// Check for certain inside the mutex
 			if (scriptEngine) {
-				if (scriptEngine->process(block)) {
+				if (scriptEngine->process(scriptArgs)) {
 					clearScriptEngine();
 					return;
 				}
 			}
 		}
-
-		// Outputs
-		for (int i = 0; i < NUM_ROWS; i++)
-			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i]);
-		// Lights
-		for (int i = 0; i < NUM_ROWS; i++)
-			for (int c = 0; c < 3; c++)
-				lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(block.lights[i][c]);
-		for (int i = 0; i < NUM_ROWS; i++)
-			for (int c = 0; c < 3; c++)
-				lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(block.switchLights[i][c]);
 	}
 
 	void clearScriptEngine() {
@@ -115,9 +94,9 @@ struct Prototype : Module {
 		for (int i = 0; i < NUM_ROWS; i++)
 			for (int c = 0; c < 3; c++)
 				lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(0.f);
-		std::memset(block.inputs, 0, sizeof(block.inputs));
 		// Reset settings
 		frameDivider = 32;
+		frame = 0;
 	}
 
 	void setScriptString(std::string path, std::string script) {
@@ -131,6 +110,7 @@ struct Prototype : Module {
 		if (path == "") {
 			return;
 		}
+		INFO("Loading script %s", path.c_str());
 		std::string ext = string::filenameExtension(string::filename(path));
 		scriptEngine = createScriptEngine(ext);
 		if (!scriptEngine) {
@@ -164,6 +144,7 @@ struct Prototype : Module {
 			clearScriptEngine();
 			return;
 		}
+		INFO("Successfully ran script %s", this->path.c_str());
 	}
 
 	json_t* dataToJson() override {
@@ -199,6 +180,24 @@ int ScriptEngine::getFrameDivider() {
 }
 void ScriptEngine::setFrameDivider(int frameDivider) {
 	module->frameDivider = frameDivider;
+}
+float ScriptEngine::getInput(int index) {
+	return module->inputs[Prototype::IN_INPUTS + index].getVoltage();
+}
+void ScriptEngine::setOutput(int index, float voltage) {
+	module->outputs[Prototype::OUT_OUTPUTS + index].setVoltage(voltage);
+}
+float ScriptEngine::getKnob(int index) {
+	return module->params[Prototype::KNOB_PARAMS + index].getValue();
+}
+bool ScriptEngine::getSwitch(int index) {
+	return module->params[Prototype::SWITCH_PARAMS + index].getValue() > 0.f;
+}
+void ScriptEngine::setLight(int index, int color, float brightness) {
+	module->lights[Prototype::LIGHT_LIGHTS + index * 3 + color].setBrightness(brightness);
+}
+void ScriptEngine::setSwitchLight(int index, int color, float brightness) {
+	module->lights[Prototype::SWITCH_LIGHTS + index * 3 + color].setBrightness(brightness);
 }
 
 

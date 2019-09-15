@@ -94,8 +94,8 @@ struct DuktapeEngine : ScriptEngine {
 			return -1;
 		}
 
-		// block (keep on stack)
-		duk_idx_t blockIdx = duk_push_object(ctx);
+		// args (keep on stack)
+		duk_idx_t argsIdx = duk_push_object(ctx);
 		{
 			// inputs
 			duk_idx_t inputsIdx = duk_push_array(ctx);
@@ -103,7 +103,7 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, inputsIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "inputs");
+			duk_put_prop_string(ctx, argsIdx, "inputs");
 
 			// outputs
 			duk_idx_t outputsIdx = duk_push_array(ctx);
@@ -111,7 +111,7 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, outputsIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "outputs");
+			duk_put_prop_string(ctx, argsIdx, "outputs");
 
 			// knobs
 			duk_idx_t knobsIdx = duk_push_array(ctx);
@@ -119,7 +119,7 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, knobsIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "knobs");
+			duk_put_prop_string(ctx, argsIdx, "knobs");
 
 			// switches
 			duk_idx_t switchesIdx = duk_push_array(ctx);
@@ -127,7 +127,7 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, switchesIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "switches");
+			duk_put_prop_string(ctx, argsIdx, "switches");
 
 			// lights
 			duk_idx_t lightsIdx = duk_push_array(ctx);
@@ -143,7 +143,7 @@ struct DuktapeEngine : ScriptEngine {
 				}
 				duk_put_prop_index(ctx, lightsIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "lights");
+			duk_put_prop_string(ctx, argsIdx, "lights");
 
 			// switchLights
 			duk_idx_t switchLightsIdx = duk_push_array(ctx);
@@ -159,44 +159,44 @@ struct DuktapeEngine : ScriptEngine {
 				}
 				duk_put_prop_index(ctx, switchLightsIdx, i);
 			}
-			duk_put_prop_string(ctx, blockIdx, "switchLights");
+			duk_put_prop_string(ctx, argsIdx, "switchLights");
 		}
 
 		return 0;
 	}
 
-	int process(ProcessBlock& block) override {
-		// block
-		duk_idx_t blockIdx = duk_get_top(ctx) - 1;
+	int process(ProcessArgs& args) override {
+		// args
+		duk_idx_t argsIdx = duk_get_top(ctx) - 1;
 		{
 			// sampleRate
-			duk_push_number(ctx, block.sampleRate);
-			duk_put_prop_string(ctx, blockIdx, "sampleRate");
+			duk_push_number(ctx, args.sampleRate);
+			duk_put_prop_string(ctx, argsIdx, "sampleRate");
 
 			// sampleTime
-			duk_push_number(ctx, block.sampleTime);
-			duk_put_prop_string(ctx, blockIdx, "sampleTime");
+			duk_push_number(ctx, args.sampleTime);
+			duk_put_prop_string(ctx, argsIdx, "sampleTime");
 
 			// inputs
-			duk_get_prop_string(ctx, blockIdx, "inputs");
+			duk_get_prop_string(ctx, argsIdx, "inputs");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, block.inputs[i]);
+				duk_push_number(ctx, getInput(i));
 				duk_put_prop_index(ctx, -2, i);
 			}
 			duk_pop(ctx);
 
 			// knobs
-			duk_get_prop_string(ctx, blockIdx, "knobs");
+			duk_get_prop_string(ctx, argsIdx, "knobs");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, block.knobs[i]);
+				duk_push_number(ctx, getKnob(i));
 				duk_put_prop_index(ctx, -2, i);
 			}
 			duk_pop(ctx);
 
 			// switches
-			duk_get_prop_string(ctx, blockIdx, "switches");
+			duk_get_prop_string(ctx, argsIdx, "switches");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_boolean(ctx, block.switches[i]);
+				duk_push_boolean(ctx, getSwitch(i));
 				duk_put_prop_index(ctx, -2, i);
 			}
 			duk_pop(ctx);
@@ -204,7 +204,7 @@ struct DuktapeEngine : ScriptEngine {
 
 		// Duplicate process function
 		duk_dup(ctx, -2);
-		// Duplicate block object
+		// Duplicate args object
 		duk_dup(ctx, -2);
 		// Call process function
 		if (duk_pcall(ctx, 1)) {
@@ -216,13 +216,13 @@ struct DuktapeEngine : ScriptEngine {
 		// return value
 		duk_pop(ctx);
 
-		// block
+		// args
 		{
 			// outputs
 			duk_get_prop_string(ctx, -1, "outputs");
 			for (int i = 0; i < NUM_ROWS; i++) {
 				duk_get_prop_index(ctx, -1, i);
-				block.outputs[i] = duk_get_number(ctx, -1);
+				setOutput(i, duk_get_number(ctx, -1));
 				duk_pop(ctx);
 			}
 			duk_pop(ctx);
@@ -233,13 +233,13 @@ struct DuktapeEngine : ScriptEngine {
 				duk_get_prop_index(ctx, -1, i);
 				{
 					duk_get_prop_string(ctx, -1, "r");
-					block.lights[i][0] = duk_get_number(ctx, -1);
+					setLight(i, 0, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 					duk_get_prop_string(ctx, -1, "g");
-					block.lights[i][1] = duk_get_number(ctx, -1);
+					setLight(i, 1, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 					duk_get_prop_string(ctx, -1, "b");
-					block.lights[i][2] = duk_get_number(ctx, -1);
+					setLight(i, 2, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 				}
 				duk_pop(ctx);
@@ -252,13 +252,13 @@ struct DuktapeEngine : ScriptEngine {
 				duk_get_prop_index(ctx, -1, i);
 				{
 					duk_get_prop_string(ctx, -1, "r");
-					block.switchLights[i][0] = duk_get_number(ctx, -1);
+					setSwitchLight(i, 0, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 					duk_get_prop_string(ctx, -1, "g");
-					block.switchLights[i][1] = duk_get_number(ctx, -1);
+					setSwitchLight(i, 1, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 					duk_get_prop_string(ctx, -1, "b");
-					block.switchLights[i][2] = duk_get_number(ctx, -1);
+					setSwitchLight(i, 2, duk_get_number(ctx, -1));
 					duk_pop(ctx);
 				}
 				duk_pop(ctx);
@@ -278,17 +278,17 @@ struct DuktapeEngine : ScriptEngine {
 
 	static duk_ret_t native_console_log(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::INFO("Prototype: %s", s);
+		rack::INFO("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_console_debug(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::DEBUG("Prototype: %s", s);
+		rack::DEBUG("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_console_warn(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::WARN("Prototype: %s", s);
+		rack::WARN("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_display(duk_context* ctx) {

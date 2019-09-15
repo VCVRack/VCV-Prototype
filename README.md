@@ -7,52 +7,73 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 - 6 lights (RGB LEDs)
 - 6 switches with RGB LEDs
 
+[Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271/1)
+
 ### Scripting API
 
-This is a reference API for the `DuktapeEngine` (JavaScript).
-Other script engines may vary in their syntax (e.g. `block.inputs[i][j]` vs `block.getInput(i, j)` vs `input(i, j)`).
+This is the reference API for the JavaScript script engine, along with default property values.
+Other script engines may vary in their syntax (e.g. `args.inputs[i][j]` vs `args.getInput(i, j)` vs `input(i, j)`), but the functionality should be similar.
 
 ```js
-// Display message on LED display.
+/** Display message on LED display.
+*/
 display(message)
-// Skip this many sample frames before running process().
-// For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate.
-// For audio generators and processors, 1 is recommended. If this is too slow for your purposes, write a C++ plugin.
-config.frameDivider = 1
-// Number of samples to store each block passed to process().
-// Latency introduced by buffers is `bufferSize * frameDivider * sampleTime`.
-config.bufferSize = 1
 
-// Called when the next block is ready to be processed.
-function process(block) {
-	// Engine sample rate in Hz. Read-only.
-	block.sampleRate
-	// Equal to `1 / sampleRate`. Read-only.
-	block.sampleTime
-	// The actual buffer size, requested by `config.bufferSize`. Read-only.
-	block.bufferSize
-	// Voltage of the input port of row `i` and buffer index `j`. Read-only.
-	block.inputs[i][j]
-	// Voltage of the output port of row `i` and buffer index `j`. Writable.
-	block.outputs[i][j]
-	// Value of the knob of row `i`. Between 0 and 1. Read-only.
-	block.knobs[i]
-	// Pressed state of the switch of row `i`. Read-only.
-	block.switches[i]
-	// Brightness of the RGB LED of row `i` and color index `c`. Writable.
-	// `c=0` for red, `c=1` for green, `c=2` for blue.
-	block.lights[i][c]
-	// Brightness of the switch RGB LED of row `i` and color index `c`. Writable.
-	block.switchLights[i][c]
+/** Skip this many sample frames before running process().
+For CV generators and processors, 256 is reasonable.
+For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate, which will capture 1ms-long triggers.
+For audio generators and processors, 1-8 is recommended, but it will consume lots of CPU.
+If this is too slow for your purposes, you should just write a C++ plugin.
+*/
+config.frameDivider // 32
+
+/** Called when the next args is ready to be processed.
+*/
+function process(args) {
+	/** Engine sample rate in Hz. Read-only.
+	*/
+	args.sampleRate
+
+	/** Engine sample timestep in seconds. Equal to `1 / sampleRate`. Read-only.
+	*/
+	args.sampleTime
+
+	/** Voltage of the input port of row `i`. Read-only.
+	*/
+	args.inputs[i] // 0.0
+
+	/** Voltage of the output port of row `i`. Writable.
+	*/
+	args.outputs[i] // 0.0
+
+	/** Value of the knob of row `i`. Between 0 and 1. Read-only.
+	*/
+	args.knobs[i] // 0.0
+
+	/** Pressed state of the switch of row `i`. Read-only.
+	*/
+	args.switches[i] // false
+
+	/** Brightness of the RGB LED of row `i`. Writable.
+	*/
+	args.lights[i].r // 0.0
+	args.lights[i].g // 0.0
+	args.lights[i].b // 0.0
+
+	/** Brightness of the switch RGB LED of row `i`. Writable.
+	*/
+	args.switchLights[i].r // 0.0
+	args.switchLights[i].g // 0.0
+	args.switchLights[i].b // 0.0
 }
 ```
 
 ### Adding a script engine
 
 - Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in the `Makefile`.
-- Create a `MyEngine.cpp` file in `src/` with a `ScriptEngine` subclass defining the virtual methods, following `src/DuktapeEngine.cpp` as an example.
+- Create a `MyEngine.cpp` file (for example) in `src/` with a `ScriptEngine` subclass defining the virtual methods, following `src/DuktapeEngine.cpp` as an example.
 - Add your engine to the "List of ScriptEngines" in `src/ScriptEngine.cpp`.
-- Build and test VCV Prototype.
+- Build and test the plugin.
 - Add a few example scripts and tests to `examples/`. These will be included in the plugin package for the user.
 - Add your name to the Contributers list below.
 - Send a pull request. Once merged, you will be added as a repo maintainer. Be sure to "watch" this repo to be notified of bugs in your engine.
