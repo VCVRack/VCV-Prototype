@@ -7,6 +7,10 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 - 6 lights (RGB LEDs)
 - 6 switches with RGB LEDs
 
+Supported scripting languages:
+- JavaScript (.js)
+- [Add your own below](#adding-a-script-engine)
+
 [Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
 
 ## Scripting API
