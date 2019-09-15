@@ -106,10 +106,7 @@ struct DuktapeEngine : ScriptEngine {
 		// block (keep on stack)
 		duk_idx_t blockIdx = duk_push_object(ctx);
 		{
-			// bufferSize
 			int bufferSize = getBufferSize();
-			duk_push_int(ctx, bufferSize);
-			duk_put_prop_string(ctx, blockIdx, "bufferSize");
 
 			// inputs
 			duk_idx_t inputsIdx = duk_push_array(ctx);
@@ -190,6 +187,10 @@ struct DuktapeEngine : ScriptEngine {
 			// sampleTime
 			duk_push_number(ctx, block.sampleTime);
 			duk_put_prop_string(ctx, blockIdx, "sampleTime");
+
+			// bufferSize
+			duk_push_int(ctx, block.bufferSize);
+			duk_put_prop_string(ctx, blockIdx, "bufferSize");
 
 			// inputs
 			duk_get_prop_string(ctx, blockIdx, "inputs");

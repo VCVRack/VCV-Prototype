@@ -12,7 +12,7 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 ## Scripting API
 
 This is the reference API for the JavaScript script engine, along with default property values.
-Other script engines may vary in their syntax (e.g. `args.inputs[i]` vs `args.getInput(i)` vs `input(i)`), but the functionality should be similar.
+Other script engines may vary in their syntax (e.g. `block.inputs[i]` vs `block.getInput(i)` vs `input(i)`), but the functionality should be similar.
 
 ```js
 /** Display message on LED display.
@@ -22,50 +22,60 @@ display(message)
 /** Skip this many sample frames before running process().
 For CV generators and processors, 256 is reasonable.
 For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate, which will capture 1ms-long triggers.
-For audio generators and processors, 1 is recommended, but it will consume lots of CPU.
+For audio generators and processors, 1 is recommended, but use `bufferSize` below.
 If this is too slow for your purposes, consider writing a C++ plugin, since native VCV Rack plugins have 10-100x better performance.
 */
 config.frameDivider // 32
 
-/** Called when the next args is ready to be processed.
+/** Instead of calling process() every sample frame, hold this many input/output voltages in a buffer and call process() when it is full.
+This decreases CPU usage, since processing buffers is faster than processing one frame at a time.
+The total latency of your script is `config.frameDivider * config.bufferSize * block.sampleTime`.
 */
-function process(args) {
+config.bufferSize // 1
+
+/** Called when the next block is ready to be processed.
+*/
+function process(block) {
 	/** Engine sample rate in Hz. Read-only.
 	*/
-	args.sampleRate
+	block.sampleRate
 
 	/** Engine sample timestep in seconds. Equal to `1 / sampleRate`. Read-only.
-	Note that the actual time between process() calls is `args.sampleTime * config.frameDivider`.
+	Note that the actual time between process() calls is `block.sampleTime * config.frameDivider`.
 	*/
-	args.sampleTime
+	block.sampleTime
 
-	/** Voltage of the input port of row `i`. Read-only.
+	/** The actual size of the input/output buffers.
 	*/
-	args.inputs[i] // 0.0
+	block.bufferSize
 
-	/** Voltage of the output port of row `i`. Writable.
+	/** Voltage of the input port of row `rowIndex`. Read-only.
 	*/
-	args.outputs[i] // 0.0
+	block.inputs[rowIndex][bufferIndex] // 0.0
 
-	/** Value of the knob of row `i`. Between 0 and 1. Read-only.
+	/** Voltage of the output port of row `rowIndex`. Writable.
 	*/
-	args.knobs[i] // 0.0
+	block.outputs[rowIndex][bufferIndex] // 0.0
 
-	/** Pressed state of the switch of row `i`. Read-only.
+	/** Value of the knob of row `rowIndex`. Between 0 and 1. Read-only.
 	*/
-	args.switches[i] // false
+	block.knobs[rowIndex] // 0.0
 
-	/** Brightness of the RGB LED of row `i`. Writable.
+	/** Pressed state of the switch of row `rowIndex`. Read-only.
 	*/
-	args.lights[i].r // 0.0
-	args.lights[i].g // 0.0
-	args.lights[i].b // 0.0
+	block.switches[rowIndex] // false
 
-	/** Brightness of the switch RGB LED of row `i`. Writable.
+	/** Brightness of the RGB LED of row `rowIndex`, between 0 and 1. Writable.
 	*/
-	args.switchLights[i].r // 0.0
-	args.switchLights[i].g // 0.0
-	args.switchLights[i].b // 0.0
+	block.lights[rowIndex][0] // 0.0 (red)
+	block.lights[rowIndex][1] // 0.0 (green)
+	block.lights[rowIndex][2] // 0.0 (blue)
+
+	/** Brightness of the switch RGB LED of row `rowIndex`. Writable.
+	*/
+	block.switchLights[rowIndex][0] // 0.0 (red)
+	block.switchLights[rowIndex][1] // 0.0 (green)
+	block.switchLights[rowIndex][2] // 0.0 (blue)
 }
 ```
 

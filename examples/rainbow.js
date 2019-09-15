@@ -23,16 +23,16 @@ function hsvToRgb(h, s, v) {
 
 
 var phase = 0
-function process(args) {
-	phase += args.sampleTime * config.frameDivider * 0.5
+function process(block) {
+	phase += block.sampleTime * config.frameDivider * 0.5
 	phase %= 1
 
 	for (var i = 0; i < 6; i++) {
 		var h = (1 - i / 6 + phase) % 1
 		var rgb = hsvToRgb(h, 1, 1)
-		args.lights[i] = rgb
-		args.switchLights[i] = rgb
-		args.outputs[i][0] = Math.sin(2 * Math.PI * h) * 5 + 5
+		block.lights[i] = rgb
+		block.switchLights[i] = rgb
+		block.outputs[i][0] = Math.sin(2 * Math.PI * h) * 5 + 5
 	}
 }
 
