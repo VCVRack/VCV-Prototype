@@ -56,6 +56,9 @@ struct DuktapeEngine : ScriptEngine {
 			// frameDivider
 			duk_push_int(ctx, getFrameDivider());
 			duk_put_prop_string(ctx, configIdx, "frameDivider");
+			// bufferSize
+			duk_push_int(ctx, getBufferSize());
+			duk_put_prop_string(ctx, configIdx, "bufferSize");
 		}
 		duk_put_global_string(ctx, "config");
 
@@ -86,6 +89,10 @@ struct DuktapeEngine : ScriptEngine {
 			duk_get_prop_string(ctx, -1, "frameDivider");
 			setFrameDivider(duk_get_int(ctx, -1));
 			duk_pop(ctx);
+			// bufferSize
+			duk_get_prop_string(ctx, -1, "bufferSize");
+			setBufferSize(duk_get_int(ctx, -1));
+			duk_pop(ctx);
 		}
 		duk_pop(ctx);
 
@@ -96,24 +103,37 @@ struct DuktapeEngine : ScriptEngine {
 			return -1;
 		}
 
-		// args (keep on stack)
-		duk_idx_t argsIdx = duk_push_object(ctx);
+		// block (keep on stack)
+		duk_idx_t blockIdx = duk_push_object(ctx);
 		{
+			// bufferSize
+			int bufferSize = getBufferSize();
+			duk_push_int(ctx, bufferSize);
+			duk_put_prop_string(ctx, blockIdx, "bufferSize");
+
 			// inputs
 			duk_idx_t inputsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, 0.0);
+				duk_idx_t inputIdx = duk_push_array(ctx);
+				for (int j = 0; j < bufferSize; j++) {
+					duk_push_number(ctx, 0.0);
+					duk_put_prop_index(ctx, inputIdx, j);
+				}
 				duk_put_prop_index(ctx, inputsIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "inputs");
+			duk_put_prop_string(ctx, blockIdx, "inputs");
 
 			// outputs
 			duk_idx_t outputsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, 0.0);
+				duk_idx_t outputIdx = duk_push_array(ctx);
+				for (int j = 0; j < bufferSize; j++) {
+					duk_push_number(ctx, 0.0);
+					duk_put_prop_index(ctx, outputIdx, j);
+				}
 				duk_put_prop_index(ctx, outputsIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "outputs");
+			duk_put_prop_string(ctx, blockIdx, "outputs");
 
 			// knobs
 			duk_idx_t knobsIdx = duk_push_array(ctx);
@@ -121,7 +141,7 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, knobsIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "knobs");
+			duk_put_prop_string(ctx, blockIdx, "knobs");
 
 			// switches
 			duk_idx_t switchesIdx = duk_push_array(ctx);
@@ -129,76 +149,72 @@ struct DuktapeEngine : ScriptEngine {
 				duk_push_number(ctx, 0.0);
 				duk_put_prop_index(ctx, switchesIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "switches");
+			duk_put_prop_string(ctx, blockIdx, "switches");
 
 			// lights
 			duk_idx_t lightsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t lightIdx = duk_push_object(ctx);
-				{
+				duk_idx_t lightIdx = duk_push_array(ctx);
+				for (int c = 0; c < 3; c++) {
 					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, lightIdx, "r");
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, lightIdx, "g");
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, lightIdx, "b");
+					duk_put_prop_index(ctx, lightIdx, c);
 				}
 				duk_put_prop_index(ctx, lightsIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "lights");
+			duk_put_prop_string(ctx, blockIdx, "lights");
 
 			// switchLights
 			duk_idx_t switchLightsIdx = duk_push_array(ctx);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_idx_t switchLightIdx = duk_push_object(ctx);
-				{
+				duk_idx_t switchLightIdx = duk_push_array(ctx);
+				for (int c = 0; c < 3; c++) {
 					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, switchLightIdx, "r");
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, switchLightIdx, "g");
-					duk_push_number(ctx, 0.0);
-					duk_put_prop_string(ctx, switchLightIdx, "b");
+					duk_put_prop_index(ctx, switchLightIdx, c);
 				}
 				duk_put_prop_index(ctx, switchLightsIdx, i);
 			}
-			duk_put_prop_string(ctx, argsIdx, "switchLights");
+			duk_put_prop_string(ctx, blockIdx, "switchLights");
 		}
 
 		return 0;
 	}
 
-	int process(ProcessArgs& args) override {
-		// args
-		duk_idx_t argsIdx = duk_get_top(ctx) - 1;
+	int process(ProcessBlock& block) override {
+		// block
+		duk_idx_t blockIdx = duk_get_top(ctx) - 1;
 		{
 			// sampleRate
-			duk_push_number(ctx, args.sampleRate);
-			duk_put_prop_string(ctx, argsIdx, "sampleRate");
+			duk_push_number(ctx, block.sampleRate);
+			duk_put_prop_string(ctx, blockIdx, "sampleRate");
 
 			// sampleTime
-			duk_push_number(ctx, args.sampleTime);
-			duk_put_prop_string(ctx, argsIdx, "sampleTime");
+			duk_push_number(ctx, block.sampleTime);
+			duk_put_prop_string(ctx, blockIdx, "sampleTime");
 
 			// inputs
-			duk_get_prop_string(ctx, argsIdx, "inputs");
+			duk_get_prop_string(ctx, blockIdx, "inputs");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, getInput(i));
-				duk_put_prop_index(ctx, -2, i);
+				duk_get_prop_index(ctx, -1, i);
+				for (int j = 0; j < block.bufferSize; j++) {
+					duk_push_number(ctx, block.inputs[i][j]);
+					duk_put_prop_index(ctx, -2, j);
+				}
+				duk_pop(ctx);
 			}
 			duk_pop(ctx);
 
 			// knobs
-			duk_get_prop_string(ctx, argsIdx, "knobs");
+			duk_get_prop_string(ctx, blockIdx, "knobs");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_number(ctx, getKnob(i));
+				duk_push_number(ctx, block.knobs[i]);
 				duk_put_prop_index(ctx, -2, i);
 			}
 			duk_pop(ctx);
 
 			// switches
-			duk_get_prop_string(ctx, argsIdx, "switches");
+			duk_get_prop_string(ctx, blockIdx, "switches");
 			for (int i = 0; i < NUM_ROWS; i++) {
-				duk_push_boolean(ctx, getSwitch(i));
+				duk_push_boolean(ctx, block.switches[i]);
 				duk_put_prop_index(ctx, -2, i);
 			}
 			duk_pop(ctx);
@@ -206,7 +222,7 @@ struct DuktapeEngine : ScriptEngine {
 
 		// Duplicate process function
 		duk_dup(ctx, -2);
-		// Duplicate args object
+		// Duplicate block object
 		duk_dup(ctx, -2);
 		// Call process function
 		if (duk_pcall(ctx, 1)) {
@@ -219,13 +235,17 @@ struct DuktapeEngine : ScriptEngine {
 		// return value
 		duk_pop(ctx);
 
-		// args
+		// block
 		{
 			// outputs
 			duk_get_prop_string(ctx, -1, "outputs");
 			for (int i = 0; i < NUM_ROWS; i++) {
 				duk_get_prop_index(ctx, -1, i);
-				setOutput(i, duk_get_number(ctx, -1));
+				for (int j = 0; j < block.bufferSize; j++) {
+					duk_get_prop_index(ctx, -1, j);
+					block.outputs[i][j] = duk_get_number(ctx, -1);
+					duk_pop(ctx);
+				}
 				duk_pop(ctx);
 			}
 			duk_pop(ctx);
@@ -234,15 +254,9 @@ struct DuktapeEngine : ScriptEngine {
 			duk_get_prop_string(ctx, -1, "lights");
 			for (int i = 0; i < NUM_ROWS; i++) {
 				duk_get_prop_index(ctx, -1, i);
-				{
-					duk_get_prop_string(ctx, -1, "r");
-					setLight(i, 0, duk_get_number(ctx, -1));
-					duk_pop(ctx);
-					duk_get_prop_string(ctx, -1, "g");
-					setLight(i, 1, duk_get_number(ctx, -1));
-					duk_pop(ctx);
-					duk_get_prop_string(ctx, -1, "b");
-					setLight(i, 2, duk_get_number(ctx, -1));
+				for (int c = 0; c < 3; c++) {
+					duk_get_prop_index(ctx, -1, c);
+					block.lights[i][c] = duk_get_number(ctx, -1);
 					duk_pop(ctx);
 				}
 				duk_pop(ctx);
@@ -253,15 +267,9 @@ struct DuktapeEngine : ScriptEngine {
 			duk_get_prop_string(ctx, -1, "switchLights");
 			for (int i = 0; i < NUM_ROWS; i++) {
 				duk_get_prop_index(ctx, -1, i);
-				{
-					duk_get_prop_string(ctx, -1, "r");
-					setSwitchLight(i, 0, duk_get_number(ctx, -1));
-					duk_pop(ctx);
-					duk_get_prop_string(ctx, -1, "g");
-					setSwitchLight(i, 1, duk_get_number(ctx, -1));
-					duk_pop(ctx);
-					duk_get_prop_string(ctx, -1, "b");
-					setSwitchLight(i, 2, duk_get_number(ctx, -1));
+				for (int c = 0; c < 3; c++) {
+					duk_get_prop_index(ctx, -1, c);
+					block.switchLights[i][c] = duk_get_number(ctx, -1);
 					duk_pop(ctx);
 				}
 				duk_pop(ctx);

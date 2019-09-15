@@ -3,6 +3,7 @@
 
 
 static const int NUM_ROWS = 6;
+static const int MAX_BUFFER_SIZE = 4096;
 
 
 struct Prototype;
@@ -18,26 +19,29 @@ struct ScriptEngine {
 	*/
 	virtual int run(const std::string& path, const std::string& script) {return 0;}
 
-	struct ProcessArgs {
+	struct ProcessBlock {
 		float sampleRate;
 		float sampleTime;
+		int bufferSize = 1;
+		float inputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
+		float outputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
+		float knobs[NUM_ROWS] = {};
+		bool switches[NUM_ROWS] = {};
+		float lights[NUM_ROWS][3] = {};
+		float switchLights[NUM_ROWS][3] = {};
 	};
 	/** Calls the script's process() method.
 	Return nonzero if failure, and set error message with setMessage().
 	*/
-	virtual int process(ProcessArgs& block) {return 0;}
+	virtual int process(ProcessBlock& block) {return 0;}
 
 	// Communication with Prototype module.
 	// These cannot be called from your constructor, so initialize your engine in the run() method.
 	void setMessage(const std::string& message);
 	int getFrameDivider();
 	void setFrameDivider(int frameDivider);
-	float getInput(int index);
-	void setOutput(int index, float voltage);
-	float getKnob(int index);
-	bool getSwitch(int index);
-	void setLight(int index, int color, float brightness);
-	void setSwitchLight(int index, int color, float brightness);
+	int getBufferSize();
+	void setBufferSize(int bufferSize);
 	// private
 	Prototype* module;
 };

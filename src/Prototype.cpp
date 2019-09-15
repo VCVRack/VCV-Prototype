@@ -39,6 +39,8 @@ struct Prototype : Module {
 	ScriptEngine* scriptEngine = NULL;
 	int frame = 0;
 	int frameDivider;
+	ScriptEngine::ProcessBlock block;
+	int bufferIndex = 0;
 
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -64,21 +66,49 @@ struct Prototype : Module {
 			return;
 		frame = 0;
 
-		ScriptEngine::ProcessArgs scriptArgs;
-		scriptArgs.sampleRate = args.sampleRate;
-		scriptArgs.sampleTime = args.sampleTime;
+		// Inputs
+		for (int i = 0; i < NUM_ROWS; i++)
+			block.inputs[i][bufferIndex] = inputs[IN_INPUTS + i].getVoltage();
 
-		{
-			std::lock_guard<std::mutex> lock(scriptMutex);
-			// Check for certain inside the mutex
-			if (scriptEngine) {
-				if (scriptEngine->process(scriptArgs)) {
-					WARN("Script %s process() failed. Stopped script.", path.c_str());
-					clearScriptEngine();
-					return;
+		// Process block
+		if (++bufferIndex >= block.bufferSize) {
+			bufferIndex = 0;
+
+			// Block settings
+			block.sampleRate = args.sampleRate;
+			block.sampleTime = args.sampleTime;
+
+			// Params
+			for (int i = 0; i < NUM_ROWS; i++)
+				block.knobs[i] = params[KNOB_PARAMS + i].getValue();
+			for (int i = 0; i < NUM_ROWS; i++)
+				block.switches[i] = params[SWITCH_PARAMS + i].getValue() > 0.f;
+
+			// Run ScriptEngine's process function
+			{
+				std::lock_guard<std::mutex> lock(scriptMutex);
+				// Check for certain inside the mutex
+				if (scriptEngine) {
+					if (scriptEngine->process(block)) {
+						WARN("Script %s process() failed. Stopped script.", path.c_str());
+						clearScriptEngine();
+						return;
+					}
 				}
 			}
+
+			// Lights
+			for (int i = 0; i < NUM_ROWS; i++)
+				for (int c = 0; c < 3; c++)
+					lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(block.lights[i][c]);
+			for (int i = 0; i < NUM_ROWS; i++)
+				for (int c = 0; c < 3; c++)
+					lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(block.switchLights[i][c]);
 		}
+
+		// Outputs
+		for (int i = 0; i < NUM_ROWS; i++)
+			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i][bufferIndex]);
 	}
 
 	void clearScriptEngine() {
@@ -98,6 +128,9 @@ struct Prototype : Module {
 		// Reset settings
 		frameDivider = 32;
 		frame = 0;
+		block.bufferSize = 1;
+		std::memset(block.inputs, 0, sizeof(block.inputs));
+		bufferIndex = 0;
 	}
 
 	void setScriptString(std::string path, std::string script) {
@@ -183,23 +216,12 @@ int ScriptEngine::getFrameDivider() {
 void ScriptEngine::setFrameDivider(int frameDivider) {
 	module->frameDivider = frameDivider;
 }
-float ScriptEngine::getInput(int index) {
-	return module->inputs[Prototype::IN_INPUTS + index].getVoltage();
+int ScriptEngine::getBufferSize() {
+	return module->block.bufferSize;
 }
-void ScriptEngine::setOutput(int index, float voltage) {
-	module->outputs[Prototype::OUT_OUTPUTS + index].setVoltage(voltage);
-}
-float ScriptEngine::getKnob(int index) {
-	return module->params[Prototype::KNOB_PARAMS + index].getValue();
-}
-bool ScriptEngine::getSwitch(int index) {
-	return module->params[Prototype::SWITCH_PARAMS + index].getValue() > 0.f;
-}
-void ScriptEngine::setLight(int index, int color, float brightness) {
-	module->lights[Prototype::LIGHT_LIGHTS + index * 3 + color].setBrightness(brightness);
-}
-void ScriptEngine::setSwitchLight(int index, int color, float brightness) {
-	module->lights[Prototype::SWITCH_LIGHTS + index * 3 + color].setBrightness(brightness);
+void ScriptEngine::setBufferSize(int bufferSize) {
+	bufferSize = clamp(bufferSize, 1, MAX_BUFFER_SIZE);
+	module->block.bufferSize = bufferSize;
 }
 
 
@@ -219,7 +241,7 @@ struct FileChoice : LedDisplayChoice {
 	}
 
 	void onAction(const event::Action& e) override {
-		std::string dir = asset::user("");
+		std::string dir = asset::plugin(pluginInstance, "examples");
 		char* pathC = osdialog_file(OSDIALOG_OPEN, dir.c_str(), NULL, NULL);
 		if (!pathC) {
 			return;

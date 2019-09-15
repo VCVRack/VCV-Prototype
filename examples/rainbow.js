@@ -15,7 +15,10 @@ function hsvToRgb(h, s, v) {
 	else if (h < 5) rgb = [x, 0, c]
 	else rgb = [c, 0, x]
 	var m = v - c
-	return {r: rgb[0] + m, g: rgb[1] + m, b: rgb[2] + m}
+	rgb[0] += m
+	rgb[1] += m
+	rgb[2] += m
+	return rgb
 }
 
 
@@ -29,8 +32,10 @@ function process(args) {
 		var rgb = hsvToRgb(h, 1, 1)
 		args.lights[i] = rgb
 		args.switchLights[i] = rgb
-		args.outputs[i] = Math.sin(2 * Math.PI * h) * 5 + 5
+		args.outputs[i][0] = Math.sin(2 * Math.PI * h) * 5 + 5
 	}
 }
 
 display("Hello, world!")
+
+// 12.2us

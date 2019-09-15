@@ -11,6 +11,7 @@
   "manualUrl": "https://github.com/VCVRack/VCV-Prototype/blob/master/README.md",
   "sourceUrl": "https://github.com/VCVRack/VCV-Prototype",
   "donateUrl": "",
+  "changelogUrl": "https://github.com/VCVRack/VCV-Prototype/blob/master/CHANGELOG.md",
   "modules": [
     {
       "slug": "Prototype",
