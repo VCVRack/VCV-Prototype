@@ -12,7 +12,7 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 ## Scripting API
 
 This is the reference API for the JavaScript script engine, along with default property values.
-Other script engines may vary in their syntax (e.g. `block.inputs[i]` vs `block.getInput(i)` vs `input(i)`), but the functionality should be similar.
+Other script engines may vary in their syntax (e.g. `block.inputs[i][j]` vs `block.getInput(i, j)` vs `input(i, j)`), but the functionality should be similar.
 
 ```js
 /** Display message on LED display.
@@ -21,15 +21,20 @@ display(message)
 
 /** Skip this many sample frames before running process().
 For CV generators and processors, 256 is reasonable.
-For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate, which will capture 1ms-long triggers.
+For sequencers, 32 is reasonable since process() will be called every 0.7ms with
+a 44100kHz sample rate, which will capture 1ms-long triggers.
 For audio generators and processors, 1 is recommended, but use `bufferSize` below.
-If this is too slow for your purposes, consider writing a C++ plugin, since native VCV Rack plugins have 10-100x better performance.
+If this is too slow for your purposes, consider writing a C++ plugin, since
+native VCV Rack plugins have 10-100x better performance.
 */
 config.frameDivider // 32
 
-/** Instead of calling process() every sample frame, hold this many input/output voltages in a buffer and call process() when it is full.
-This decreases CPU usage, since processing buffers is faster than processing one frame at a time.
-The total latency of your script is `config.frameDivider * config.bufferSize * block.sampleTime`.
+/** Instead of calling process() every sample frame, hold this many input/output
+voltages in a buffer and call process() when it is full.
+This decreases CPU usage, since processing buffers is faster than processing one
+frame at a time.
+The total latency of your script is
+`config.frameDivider * config.bufferSize * block.sampleTime`.
 */
 config.bufferSize // 1
 
@@ -41,7 +46,8 @@ function process(block) {
 	block.sampleRate
 
 	/** Engine sample timestep in seconds. Equal to `1 / sampleRate`. Read-only.
-	Note that the actual time between process() calls is `block.sampleTime * config.frameDivider`.
+	Note that the actual time between process() calls is
+	`block.sampleTime * config.frameDivider`.
 	*/
 	block.sampleTime
 
