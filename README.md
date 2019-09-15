@@ -7,12 +7,12 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 - 6 lights (RGB LEDs)
 - 6 switches with RGB LEDs
 
-[Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271/1)
+[Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
 
 ## Scripting API
 
 This is the reference API for the JavaScript script engine, along with default property values.
-Other script engines may vary in their syntax (e.g. `args.inputs[i][j]` vs `args.getInput(i, j)` vs `input(i, j)`), but the functionality should be similar.
+Other script engines may vary in their syntax (e.g. `args.inputs[i]` vs `args.getInput(i)` vs `input(i)`), but the functionality should be similar.
 
 ```js
 /** Display message on LED display.
@@ -22,8 +22,8 @@ display(message)
 /** Skip this many sample frames before running process().
 For CV generators and processors, 256 is reasonable.
 For sequencers, 32 is reasonable since process() will be called every 0.7ms with a 44100kHz sample rate, which will capture 1ms-long triggers.
-For audio generators and processors, 1-8 is recommended, but it will consume lots of CPU.
-If this is too slow for your purposes, consider writing a C++ plugin, since native VCV Rack plugins are 10-100 faster.
+For audio generators and processors, 1 is recommended, but it will consume lots of CPU.
+If this is too slow for your purposes, consider writing a C++ plugin, since native VCV Rack plugins have 10-100x better performance.
 */
 config.frameDivider // 32
 
@@ -35,6 +35,7 @@ function process(args) {
 	args.sampleRate
 
 	/** Engine sample timestep in seconds. Equal to `1 / sampleRate`. Read-only.
+	Note that the actual time between process() calls is `args.sampleTime * config.frameDivider`.
 	*/
 	args.sampleTime
 
@@ -78,7 +79,7 @@ function process(args) {
 - Add your name to the Contributers list below.
 - Send a pull request. Once merged, you will be added as a repo maintainer. Be sure to "watch" this repo to be notified of bugs in your engine.
 
-## Maintainers
+## Contributers
 
 - [Wes Milholen](https://grayscale.info/): panel design
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript)
@@ -86,7 +87,7 @@ function process(args) {
 
 ## License
 
-All **source code** is copyright © 2019 VCV Prototype Maintainers and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
+All **source code** is copyright © 2019 VCV Prototype Contributers and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
 The **panel graphics** in the `res` directory are copyright © 2019 [Grayscale](http://grayscale.info/) and licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 You may not distribute modified adaptations of these graphics.
