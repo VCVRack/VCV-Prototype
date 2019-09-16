@@ -83,6 +83,8 @@ struct Prototype : Module {
 				block.knobs[i] = params[KNOB_PARAMS + i].getValue();
 			for (int i = 0; i < NUM_ROWS; i++)
 				block.switches[i] = params[SWITCH_PARAMS + i].getValue() > 0.f;
+			float oldKnobs[NUM_ROWS];
+			std::memcpy(oldKnobs, block.knobs, sizeof(block.knobs));
 
 			// Run ScriptEngine's process function
 			{
@@ -97,6 +99,11 @@ struct Prototype : Module {
 				}
 			}
 
+			// Params
+			for (int i = 0; i < NUM_ROWS; i++) {
+				if (block.knobs[i] != oldKnobs[i])
+					params[KNOB_PARAMS + i].setValue(block.knobs[i]);
+			}
 			// Lights
 			for (int i = 0; i < NUM_ROWS; i++)
 				for (int c = 0; c < 3; c++)

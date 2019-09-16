@@ -61,5 +61,17 @@ $(duktape):
 # 	$(SHA256) 6.13.0.tar.gz 183beeb3b720bfeab6cc8af12fbec0bf9fef2727684ac79289fd12d0dfee728b
 # 	cd dep && $(UNTAR) ../6.13.0.tar.gz
 
+# # LLVM
+# llvm := dep/lib/libllvm.a
+# DEPS += $(llvm)
+# $(llvm):
+# 	$(WGET) "https://github.com/llvm/llvm-project/releases/download/llvmorg-8.0.1/llvm-8.0.1.src.tar.xz"
+# 	$(SHA256) llvm-8.0.1.src.tar.xz 44787a6d02f7140f145e2250d56c9f849334e11f9ae379827510ed72f12b75e7
+# 	cd dep && $(UNTAR) ../llvm-8.0.1.src.tar.xz
+# 	cd dep/llvm-8.0.1.src && mkdir -p build
+# 	cd dep/llvm-8.0.1.src/build && $(CMAKE) ..
+# 	cd dep/llvm-8.0.1.src/build && $(MAKE)
+# 	cd dep/llvm-8.0.1.src/build && $(MAKE) install
+
 
 include $(RACK_DIR)/plugin.mk
