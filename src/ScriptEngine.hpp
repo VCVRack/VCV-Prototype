@@ -51,11 +51,14 @@ struct ScriptEngine {
 
 // Add your createMyEngine() function here.
 ScriptEngine* createDuktapeEngine();
+ScriptEngine* createLuaJitEngine();
 
 inline ScriptEngine* createScriptEngine(std::string ext) {
 	ext = rack::string::lowercase(ext);
 	if (ext == "js")
 		return createDuktapeEngine();
+	else if (ext == "lua")
+		return createLuaJitEngine();
 	// Add your file extension check here.
 	return NULL;
 }

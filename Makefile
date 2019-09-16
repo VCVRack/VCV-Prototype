@@ -22,14 +22,16 @@ $(duktape):
 	$(SHA256) duktape-2.4.0.tar.xz 86a89307d1633b5cedb2c6e56dc86e92679fc34b05be551722d8cc69ab0771fc
 	cd dep && $(UNTAR) ../duktape-2.4.0.tar.xz
 
-# # LuaJIT
-# luajit := dep/lib/luajit.a
-# DEPS += $(luajit)
-# $(luajit):
-# 	cd dep && $(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
-# 	cd dep && $(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
-# 	cd dep && $(UNTAR) LuaJIT-2.0.5.tar.gz
-# 	cd dep/LuaJIT-2.0.5 && $(MAKE)
+# LuaJIT
+luajit := dep/lib/libluajit-5.1.a
+DEPS += $(luajit)
+OBJECTS += $(luajit)
+FLAGS += -Idep/include/luajit-2.0
+$(luajit):
+	$(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
+	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
+	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
+	cd dep/LuaJIT-2.0.5 && $(MAKE) PREFIX="$(DEP_PATH)" install
 
 # # Julia
 # julia := dep/lib/libjulia.a
