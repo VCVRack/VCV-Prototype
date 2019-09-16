@@ -37,7 +37,7 @@ config.frameDivider // 32
 voltages in a buffer and call process() when it is full.
 This decreases CPU usage, since processing buffers is faster than processing one
 frame at a time.
-The total latency of your script is
+The total latency of your script in seconds is
 `config.frameDivider * config.bufferSize * block.sampleTime`.
 */
 config.bufferSize // 1
