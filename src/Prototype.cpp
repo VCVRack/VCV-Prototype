@@ -208,8 +208,43 @@ struct Prototype : Module {
 		}
 	}
 
+	void loadScriptDialog() {
+		std::string dir = asset::plugin(pluginInstance, "examples");
+		char* pathC = osdialog_file(OSDIALOG_OPEN, dir.c_str(), NULL, NULL);
+		if (!pathC) {
+			return;
+		}
+		std::string path = pathC;
+		std::free(pathC);
+
+		setScriptString(path, "");
+	}
+
 	void reloadScript() {
 		setScriptString(path, script);
+	}
+
+	void saveScriptDialog() {
+		if (script == "")
+			return;
+
+		std::string ext = string::filenameExtension(string::filename(path));
+		std::string dir = asset::plugin(pluginInstance, "examples");
+		std::string filename = "Untitled." + ext;
+		char* pathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
+		if (!pathC) {
+			return;
+		}
+		std::string path = pathC;
+		std::free(pathC);
+		// Add extension if user didn't specify one
+		std::string pathExt = string::filenameExtension(string::filename(path));
+		if (pathExt == "")
+			path += "." + ext;
+
+		std::ofstream f(path);
+		f << script;
+		path = path;
 	}
 };
 
@@ -238,15 +273,7 @@ struct FileChoice : LedDisplayChoice {
 	}
 
 	void onAction(const event::Action& e) override {
-		std::string dir = asset::plugin(pluginInstance, "examples");
-		char* pathC = osdialog_file(OSDIALOG_OPEN, dir.c_str(), NULL, NULL);
-		if (!pathC) {
-			return;
-		}
-		std::string path = pathC;
-		std::free(pathC);
-
-		module->setScriptString(path, "");
+		module->loadScriptDialog();
 	}
 };
 
@@ -300,6 +327,14 @@ struct PrototypeDisplay : LedDisplay {
 };
 
 
+struct LoadScriptItem : MenuItem {
+	Prototype* module;
+	void onAction(const event::Action& e) override {
+		module->loadScriptDialog();
+	}
+};
+
+
 struct ReloadScriptItem : MenuItem {
 	Prototype* module;
 	void onAction(const event::Action& e) override {
@@ -311,26 +346,7 @@ struct ReloadScriptItem : MenuItem {
 struct SaveScriptItem : MenuItem {
 	Prototype* module;
 	void onAction(const event::Action& e) override {
-		if (module->script == "")
-			return;
-
-		std::string ext = string::filenameExtension(string::filename(module->path));
-		std::string dir = asset::plugin(pluginInstance, "examples");
-		std::string filename = "Untitled." + ext;
-		char* pathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
-		if (!pathC) {
-			return;
-		}
-		std::string path = pathC;
-		std::free(pathC);
-		// Add extension if user didn't specify one
-		std::string pathExt = string::filenameExtension(string::filename(path));
-		if (pathExt == "")
-			path += "." + ext;
-
-		std::ofstream f(path);
-		f << module->script;
-		module->path = path;
+		module->saveScriptDialog();
 	}
 };
 
@@ -395,7 +411,13 @@ struct PrototypeWidget : ModuleWidget {
 
 		menu->addChild(new MenuEntry);
 
-		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
+		LoadScriptItem* loadScriptItem = createMenuItem<LoadScriptItem>("Load script");
+		loadScriptItem->module = module;
+		loadScriptItem->rightText = RACK_MOD_CTRL_NAME "+O";
+		menu->addChild(loadScriptItem);
+
+		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload/rerun script");
+		reloadScriptItem->rightText = RACK_MOD_CTRL_NAME "+J";
 		reloadScriptItem->module = module;
 		menu->addChild(reloadScriptItem);
 
@@ -408,6 +430,30 @@ struct PrototypeWidget : ModuleWidget {
 		Prototype* module = dynamic_cast<Prototype*>(this->module);
 		if (module && !e.paths.empty()) {
 			module->setScriptString(e.paths[0], "");
+		}
+	}
+
+	void onHoverKey(const event::HoverKey& e) override {
+		ModuleWidget::onHoverKey(e);
+		if (e.isConsumed())
+			return;
+
+		Prototype* module = dynamic_cast<Prototype*>(this->module);
+		if (e.action == GLFW_PRESS) {
+			switch (e.key) {
+				case GLFW_KEY_O: {
+					if ((e.mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+						module->loadScriptDialog();
+						e.consume(this);
+					}
+				} break;
+				case GLFW_KEY_J: {
+					if ((e.mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
+						module->reloadScript();
+						e.consume(this);
+					}
+				} break;
+			}
 		}
 	}
 };
