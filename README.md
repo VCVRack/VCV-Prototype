@@ -67,7 +67,7 @@ function process(block) {
 	*/
 	block.outputs[i][bufferIndex] // 0.0
 
-	/** Value of the knob of column `i`. Between 0 and 1. Read-only.
+	/** Value of the knob of column `i`. Between 0 and 1. Writable.
 	*/
 	block.knobs[i] // 0.0
 
