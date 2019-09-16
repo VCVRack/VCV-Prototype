@@ -397,6 +397,12 @@ struct PrototypeWidget : ModuleWidget {
 		menu->addChild(saveScriptItem);
 	}
 
+	void onPathDrop(const event::PathDrop& e) override {
+		Prototype* module = dynamic_cast<Prototype*>(this->module);
+		if (module && !e.paths.empty()) {
+			module->setScriptString(e.paths[0], "");
+		}
+	}
 };
 
 
