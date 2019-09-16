@@ -1,3 +1,6 @@
+### 1.1.1 (in development)
+- Add "Save script as" in panel context menu.
+- Allow script to be loaded by dragging-and-dropping on the panel.
 
 ### 1.1.0 (2019-09-15)
 - Add block buffering with `config.bufferSize`.
