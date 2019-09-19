@@ -231,20 +231,20 @@ struct Prototype : Module {
 		std::string ext = string::filenameExtension(string::filename(path));
 		std::string dir = asset::plugin(pluginInstance, "examples");
 		std::string filename = "Untitled." + ext;
-		char* pathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
-		if (!pathC) {
+		char* newPathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
+		if (!newPathC) {
 			return;
 		}
-		std::string path = pathC;
-		std::free(pathC);
+		std::string newPath = newPathC;
+		std::free(newPathC);
 		// Add extension if user didn't specify one
-		std::string pathExt = string::filenameExtension(string::filename(path));
-		if (pathExt == "")
-			path += "." + ext;
+		std::string newExt = string::filenameExtension(string::filename(newPath));
+		if (newExt == "")
+			newPath += "." + ext;
 
-		std::ofstream f(path);
+		std::ofstream f(newPath);
 		f << script;
-		path = path;
+		path = newPath;
 	}
 };
 
