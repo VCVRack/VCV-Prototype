@@ -109,6 +109,8 @@ function process(block) {
 
 All **source code** is copyright © 2019 VCV Prototype Contributers and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
+All **example scripts** in the `examples` directory are licensed under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/legalcode) (public domain).
+
 The **panel graphics** in the `res` directory are copyright © 2019 [Grayscale](http://grayscale.info/) and licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 You may not distribute modified adaptations of these graphics.
 
