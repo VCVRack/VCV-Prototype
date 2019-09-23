@@ -57,6 +57,10 @@ struct Prototype : Module {
 		clearScriptEngine();
 	}
 
+	void onReset() override {
+		reloadScript();
+	}
+
 	void process(const ProcessArgs& args) override {
 		if (!scriptEngine)
 			return;
