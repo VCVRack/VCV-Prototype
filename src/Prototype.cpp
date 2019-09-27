@@ -4,7 +4,9 @@
 #include <fstream>
 #include <sstream>
 #include <mutex>
+#include <thread>
 #include "ScriptEngine.hpp"
+#include <libfswatch/c/libfswatch.h>
 
 
 using namespace rack;
@@ -42,6 +44,9 @@ struct Prototype : Module {
 	ScriptEngine::ProcessBlock block;
 	int bufferIndex = 0;
 
+	FSW_SESSION* fsw = NULL;
+	std::thread watchThread;
+
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		for (int i = 0; i < NUM_ROWS; i++)
@@ -49,22 +54,18 @@ struct Prototype : Module {
 		for (int i = 0; i < NUM_ROWS; i++)
 			configParam(SWITCH_PARAMS + i, 0.f, 1.f, 0.f, string::f("Switch %d", i + 1));
 
-		clearScriptEngine();
+		setPath("");
 	}
 
 	~Prototype() {
-		std::lock_guard<std::mutex> lock(scriptMutex);
-		clearScriptEngine();
+		setPath("");
 	}
 
 	void onReset() override {
-		reloadScript();
+		setScript(script);
 	}
 
 	void process(const ProcessArgs& args) override {
-		if (!scriptEngine)
-			return;
-
 		// Frame divider for reducing sample rate
 		if (++frame < frameDivider)
 			return;
@@ -97,7 +98,8 @@ struct Prototype : Module {
 				if (scriptEngine) {
 					if (scriptEngine->process()) {
 						WARN("Script %s process() failed. Stopped script.", path.c_str());
-						clearScriptEngine();
+						delete scriptEngine;
+						scriptEngine = NULL;
 						return;
 					}
 				}
@@ -122,11 +124,72 @@ struct Prototype : Module {
 			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i][bufferIndex]);
 	}
 
-	void clearScriptEngine() {
+	void setPath(std::string path) {
+		// Cleanup
+		if (fsw) {
+			fsw_stop_monitor(fsw);
+			fsw_destroy_session(fsw);
+			watchThread.join();
+			fsw = NULL;
+		}
+		this->path = "";
+		setScript("");
+
+		if (path == "")
+			return;
+
+		this->path = path;
+		loadPath();
+
+		if (this->script == "")
+			return;
+
+		// Watch file
+		FSW_STATUS err = fsw_init_library();
+		if (err == FSW_OK) {
+#ifdef ARCH_LIN
+			fsw_monitor_type type = inotify_monitor_type;
+#endif
+			fsw = fsw_init_session(type);
+			fsw_add_path(fsw, this->path.c_str());
+			fsw_set_callback(fsw, watchCallback, this);
+			fsw_set_allow_overflow(fsw, false);
+			fsw_set_latency(fsw, 0.5);
+			watchThread = std::thread(watchRun, fsw);
+		}
+	}
+
+	void loadPath() {
+		// Read file
+		std::ifstream file;
+		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		try {
+			file.open(path);
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::string script = buffer.str();
+			setScript(script);
+		}
+		catch (const std::runtime_error& err) {
+			// Fail silently
+		}
+	}
+
+	void setScript(std::string script) {
+		std::lock_guard<std::mutex> lock(scriptMutex);
+		// Reset script state
 		if (scriptEngine) {
 			delete scriptEngine;
 			scriptEngine = NULL;
 		}
+		this->script = "";
+		this->engineName = "";
+		this->message = "";
+		// Reset process state
+		frameDivider = 32;
+		frame = 0;
+		block = ScriptEngine::ProcessBlock();
+		bufferIndex = 0;
 		// Reset outputs and lights because they might hold old values
 		for (int i = 0; i < NUM_ROWS; i++)
 			outputs[OUT_OUTPUTS + i].setVoltage(0.f);
@@ -136,26 +199,11 @@ struct Prototype : Module {
 		for (int i = 0; i < NUM_ROWS; i++)
 			for (int c = 0; c < 3; c++)
 				lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(0.f);
-		// Reset settings
-		frameDivider = 32;
-		frame = 0;
-		block = ScriptEngine::ProcessBlock();
-		bufferIndex = 0;
-	}
 
-	void setScriptString(std::string path, std::string script) {
-		std::lock_guard<std::mutex> lock(scriptMutex);
-		message = "";
-		this->path = "";
-		this->script = "";
-		this->engineName = "";
-		clearScriptEngine();
-		// Get ScriptEngine from path extension
-		if (path == "") {
-			// Empty path means no script is requested. Fail silently.
+		if (script == "")
 			return;
-		}
-		INFO("Loading script %s", path.c_str());
+
+		// Create script engine from path extension
 		std::string ext = string::filenameExtension(string::filename(path));
 		scriptEngine = createScriptEngine(ext);
 		if (!scriptEngine) {
@@ -164,33 +212,37 @@ struct Prototype : Module {
 		}
 		scriptEngine->module = this;
 		scriptEngine->block = &block;
-		this->path = path;
+
+		// Run script
+		if (scriptEngine->run(path, script)) {
+			// Error message should have been set by ScriptEngine
+			delete scriptEngine;
+			scriptEngine = NULL;
+			return;
+		}
 		this->script = script;
 		this->engineName = scriptEngine->getEngineName();
-		// Read file
-		std::ifstream file;
-		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		try {
-			file.open(this->path);
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			this->script = buffer.str();
-		}
-		catch (const std::runtime_error& err) {
-			WARN("Script %s not found, using stored script string", this->path.c_str());
-		}
-		// Run script
-		if (this->script == "") {
-			message = "Could not load script.";
-			clearScriptEngine();
+	}
+
+	static void watchRun(FSW_SESSION* fsw) {
+		fsw_start_monitor(fsw);
+	}
+
+	static void watchCallback(fsw_cevent const* const events, const unsigned int event_num, void* data) {
+		Prototype* that = (Prototype*) data;
+		if (event_num < 1)
 			return;
+
+		// Look for flags
+		for (unsigned i = 0; i < event_num; i++) {
+			for (unsigned j = 0; j < events[i].flags_num; j++) {
+				fsw_event_flag flag = events[i].flags[j];
+				if (flag == Created || flag == Updated) {
+					that->loadPath();
+					return;
+				}
+			}
 		}
-		if (scriptEngine->run(this->path, this->script)) {
-			// Error message should have been set by ScriptEngine
-			clearScriptEngine();
-			return;
-		}
-		INFO("Successfully ran script %s", this->path.c_str());
 	}
 
 	json_t* dataToJson() override {
@@ -204,11 +256,19 @@ struct Prototype : Module {
 
 	void dataFromJson(json_t* rootJ) override {
 		json_t* pathJ = json_object_get(rootJ, "path");
-		json_t* scriptJ = json_object_get(rootJ, "script");
-		if (pathJ && scriptJ) {
+		if (pathJ) {
 			std::string path = json_string_value(pathJ);
-			std::string script = std::string(json_string_value(scriptJ), json_string_length(scriptJ));
-			setScriptString(path, script);
+			setPath(path);
+		}
+
+		// Only get the script string if the script file wasn't found.
+		if (this->path != "" && this->script == "") {
+			WARN("Script file %s not found, using script in patch", this->path.c_str());
+			json_t* scriptJ = json_object_get(rootJ, "script");
+			if (scriptJ) {
+				std::string script = std::string(json_string_value(scriptJ), json_string_length(scriptJ));
+				setScript(script);
+			}
 		}
 	}
 
@@ -221,11 +281,7 @@ struct Prototype : Module {
 		std::string path = pathC;
 		std::free(pathC);
 
-		setScriptString(path, "");
-	}
-
-	void reloadScript() {
-		setScriptString(path, script);
+		setPath(path);
 	}
 
 	void saveScriptDialog() {
@@ -248,6 +304,7 @@ struct Prototype : Module {
 
 		std::ofstream f(newPath);
 		f << script;
+		// Set path directly
 		path = newPath;
 	}
 };
@@ -339,14 +396,6 @@ struct LoadScriptItem : MenuItem {
 };
 
 
-struct ReloadScriptItem : MenuItem {
-	Prototype* module;
-	void onAction(const event::Action& e) override {
-		module->reloadScript();
-	}
-};
-
-
 struct SaveScriptItem : MenuItem {
 	Prototype* module;
 	void onAction(const event::Action& e) override {
@@ -417,13 +466,7 @@ struct PrototypeWidget : ModuleWidget {
 
 		LoadScriptItem* loadScriptItem = createMenuItem<LoadScriptItem>("Load script");
 		loadScriptItem->module = module;
-		loadScriptItem->rightText = RACK_MOD_CTRL_NAME "+O";
 		menu->addChild(loadScriptItem);
-
-		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload/rerun script");
-		reloadScriptItem->rightText = RACK_MOD_CTRL_NAME "+J";
-		reloadScriptItem->module = module;
-		menu->addChild(reloadScriptItem);
 
 		SaveScriptItem* saveScriptItem = createMenuItem<SaveScriptItem>("Save script as");
 		saveScriptItem->module = module;
@@ -432,32 +475,8 @@ struct PrototypeWidget : ModuleWidget {
 
 	void onPathDrop(const event::PathDrop& e) override {
 		Prototype* module = dynamic_cast<Prototype*>(this->module);
-		if (module && !e.paths.empty()) {
-			module->setScriptString(e.paths[0], "");
-		}
-	}
-
-	void onHoverKey(const event::HoverKey& e) override {
-		ModuleWidget::onHoverKey(e);
-		if (e.isConsumed())
-			return;
-
-		Prototype* module = dynamic_cast<Prototype*>(this->module);
-		if (e.action == GLFW_PRESS) {
-			switch (e.key) {
-				case GLFW_KEY_O: {
-					if ((e.mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
-						module->loadScriptDialog();
-						e.consume(this);
-					}
-				} break;
-				case GLFW_KEY_J: {
-					if ((e.mods & RACK_MOD_MASK) == RACK_MOD_CTRL) {
-						module->reloadScript();
-						e.consume(this);
-					}
-				} break;
-			}
+		if (module && e.paths.size() >= 1) {
+			module->setPath(e.paths[0]);
 		}
 	}
 };
