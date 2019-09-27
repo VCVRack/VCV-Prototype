@@ -6,7 +6,7 @@
 #include <mutex>
 #include <thread>
 #include "ScriptEngine.hpp"
-#include <libfswatch/c/libfswatch.h>
+#include <efsw/efsw.h>
 
 
 using namespace rack;
@@ -44,8 +44,7 @@ struct Prototype : Module {
 	ScriptEngine::ProcessBlock* block;
 	int bufferIndex = 0;
 
-	FSW_SESSION* fsw = NULL;
-	std::thread watchThread;
+	efsw_watcher efsw = NULL;
 
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -128,11 +127,9 @@ struct Prototype : Module {
 
 	void setPath(std::string path) {
 		// Cleanup
-		if (fsw) {
-			fsw_stop_monitor(fsw);
-			fsw_destroy_session(fsw);
-			watchThread.join();
-			fsw = NULL;
+		if (efsw) {
+			efsw_release(efsw);
+			efsw = NULL;
 		}
 		this->path = "";
 		setScript("");
@@ -147,22 +144,10 @@ struct Prototype : Module {
 			return;
 
 		// Watch file
-		FSW_STATUS err = fsw_init_library();
-		if (err == FSW_OK) {
-#if defined ARCH_LIN
-			fsw_monitor_type type = inotify_monitor_type;
-#elif defined ARCH_MAC
-			fsw_monitor_type type = fsevents_monitor_type;
-#elif defined ARCH_WIN
-			fsw_monitor_type type = windows_monitor_type;
-#endif
-			fsw = fsw_init_session(type);
-			fsw_add_path(fsw, this->path.c_str());
-			fsw_set_callback(fsw, watchCallback, this);
-			fsw_set_allow_overflow(fsw, false);
-			fsw_set_latency(fsw, 0.5);
-			watchThread = std::thread(watchRun, fsw);
-		}
+		std::string dir = string::directory(path);
+		efsw = efsw_create(false);
+		efsw_addwatch(efsw, dir.c_str(), watchCallback, false, this);
+		efsw_watch(efsw);
 	}
 
 	void loadPath() {
@@ -231,23 +216,13 @@ struct Prototype : Module {
 		this->engineName = scriptEngine->getEngineName();
 	}
 
-	static void watchRun(FSW_SESSION* fsw) {
-		fsw_start_monitor(fsw);
-	}
-
-	static void watchCallback(fsw_cevent const* const events, const unsigned int event_num, void* data) {
-		Prototype* that = (Prototype*) data;
-		if (event_num < 1)
-			return;
-
-		// Look for flags
-		for (unsigned i = 0; i < event_num; i++) {
-			for (unsigned j = 0; j < events[i].flags_num; j++) {
-				fsw_event_flag flag = events[i].flags[j];
-				if (flag == Created || flag == Updated) {
-					that->loadPath();
-					return;
-				}
+	static void watchCallback(efsw_watcher watcher, efsw_watchid watchid, const char* dir, const char* filename, enum efsw_action action, const char* old_filename, void* param) {
+		Prototype* that = (Prototype*) param;
+		if (action == EFSW_ADD || action == EFSW_DELETE || action == EFSW_MODIFIED || action == EFSW_MOVED) {
+			// Check filename
+			std::string pathFilename = string::filename(that->path);
+			if (pathFilename == filename) {
+				that->loadPath();
 			}
 		}
 	}
@@ -289,6 +264,10 @@ struct Prototype : Module {
 		std::free(pathC);
 
 		setPath(path);
+	}
+
+	void reloadScript() {
+		loadPath();
 	}
 
 	void saveScriptDialog() {
@@ -403,6 +382,14 @@ struct LoadScriptItem : MenuItem {
 };
 
 
+struct ReloadScriptItem : MenuItem {
+	Prototype* module;
+	void onAction(const event::Action& e) override {
+		module->reloadScript();
+	}
+};
+
+
 struct SaveScriptItem : MenuItem {
 	Prototype* module;
 	void onAction(const event::Action& e) override {
@@ -474,6 +461,10 @@ struct PrototypeWidget : ModuleWidget {
 		LoadScriptItem* loadScriptItem = createMenuItem<LoadScriptItem>("Load script");
 		loadScriptItem->module = module;
 		menu->addChild(loadScriptItem);
+
+		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
+		reloadScriptItem->module = module;
+		menu->addChild(reloadScriptItem);
 
 		SaveScriptItem* saveScriptItem = createMenuItem<SaveScriptItem>("Save script as");
 		saveScriptItem->module = module;

@@ -89,6 +89,13 @@ function process(block) {
 }
 ```
 
+## Build dependencies
+
+### Windows
+```
+pacman -S mingw-w64-x86_64-premake
+```
+
 ## Adding a script engine
 
 - Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in the `Makefile`.
