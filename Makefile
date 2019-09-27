@@ -11,18 +11,24 @@ SOURCES += $(wildcard src/*.cpp)
 DISTRIBUTABLES += res examples
 DISTRIBUTABLES += $(wildcard LICENSE*)
 
+include $(RACK_DIR)/arch.mk
 
 # fswatch
 fswatch := dep/lib/libfswatch.a
 DEPS += $(fswatch)
 OBJECTS += $(fswatch)
+ifdef ARCH_WIN
+	LDFLAGS += -lintl
+	FSWATCH_CONFIGURE_FLAGS += CFLAGS="-DHAVE_WINDOWS" CXXFLAGS="-DHAVE_WINDOWS"
+endif
 $(fswatch):
-	$(WGET) "https://github.com/emcrisostomo/fswatch/releases/download/1.14.0/fswatch-1.14.0.tar.gz"
-	$(SHA256) fswatch-1.14.0.tar.gz 44d5707adc0e46d901ba95a5dc35c5cc282bd6f331fcf9dbf9fad4af0ed5b29d
-	cd dep && $(UNTAR) ../fswatch-1.14.0.tar.gz
-	cd dep/fswatch-1.14.0 && $(CONFIGURE) --enable-shared=no
-	cd dep/fswatch-1.14.0 && $(MAKE)
-	cd dep/fswatch-1.14.0 && $(MAKE) install
+ifdef ARCH_WIN
+	cd fswatch && MINGWPREFIX=/mingw64 ../fswatch_mingw_patch.sh
+endif
+	cd fswatch && ./autogen.sh
+	cd fswatch && $(CONFIGURE) $(FSWATCH_CONFIGURE_FLAGS) --enable-shared=no
+	cd fswatch && $(MAKE)
+	cd fswatch && $(MAKE) install
 
 # QuickJS
 quickjs := dep/lib/quickjs/libquickjs.a

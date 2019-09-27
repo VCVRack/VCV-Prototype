@@ -1,3 +1,6 @@
+[submodule "fswatch"]
+	path = fswatch
+	url = https://github.com/emcrisostomo/fswatch.git
 [submodule "QuickJS"]
 	path = QuickJS
-	url = https://github.com/JerrySievert/QuickJS
+	url = https://github.com/JerrySievert/QuickJS.git
