@@ -101,6 +101,16 @@ pacman -S mingw-w64-x86_64-premake
 brew install premake
 ```
 
+### Ubuntu 16.04+
+```bash
+sudo apt install premake4
+```
+
+### Arch Linux
+```bash
+sudo pacman -S premake
+```
+
 ## Adding a script engine
 
 - Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in the `Makefile`.
