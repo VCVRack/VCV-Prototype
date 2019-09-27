@@ -128,7 +128,7 @@ struct QuickJSEngine : ScriptEngine {
       JSValue buffer = JS_GetPropertyStr(ctx, config, "bufferSize");
       int32_t bufferValue;
       if (JS_ToInt32(ctx, &bufferValue, buffer) == 0) {
-        block->bufferSize = rack::clamp(bufferValue, 1, MAX_BUFFER_SIZE);
+        block->bufferSize = bufferValue;
       }
 
       JS_FreeValue(ctx, config);

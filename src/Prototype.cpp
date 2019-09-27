@@ -41,7 +41,7 @@ struct Prototype : Module {
 	ScriptEngine* scriptEngine = NULL;
 	int frame = 0;
 	int frameDivider;
-	ScriptEngine::ProcessBlock block;
+	ScriptEngine::ProcessBlock* block;
 	int bufferIndex = 0;
 
 	FSW_SESSION* fsw = NULL;
@@ -54,11 +54,13 @@ struct Prototype : Module {
 		for (int i = 0; i < NUM_ROWS; i++)
 			configParam(SWITCH_PARAMS + i, 0.f, 1.f, 0.f, string::f("Switch %d", i + 1));
 
+		block = new ScriptEngine::ProcessBlock;
 		setPath("");
 	}
 
 	~Prototype() {
 		setPath("");
+		delete block;
 	}
 
 	void onReset() override {
@@ -73,23 +75,23 @@ struct Prototype : Module {
 
 		// Inputs
 		for (int i = 0; i < NUM_ROWS; i++)
-			block.inputs[i][bufferIndex] = inputs[IN_INPUTS + i].getVoltage();
+			block->inputs[i][bufferIndex] = inputs[IN_INPUTS + i].getVoltage();
 
 		// Process block
-		if (++bufferIndex >= block.bufferSize) {
+		if (++bufferIndex >= block->bufferSize) {
 			bufferIndex = 0;
 
 			// Block settings
-			block.sampleRate = args.sampleRate;
-			block.sampleTime = args.sampleTime;
+			block->sampleRate = args.sampleRate;
+			block->sampleTime = args.sampleTime;
 
 			// Params
 			for (int i = 0; i < NUM_ROWS; i++)
-				block.knobs[i] = params[KNOB_PARAMS + i].getValue();
+				block->knobs[i] = params[KNOB_PARAMS + i].getValue();
 			for (int i = 0; i < NUM_ROWS; i++)
-				block.switches[i] = params[SWITCH_PARAMS + i].getValue() > 0.f;
+				block->switches[i] = params[SWITCH_PARAMS + i].getValue() > 0.f;
 			float oldKnobs[NUM_ROWS];
-			std::memcpy(oldKnobs, block.knobs, sizeof(block.knobs));
+			std::memcpy(oldKnobs, block->knobs, sizeof(block->knobs));
 
 			// Run ScriptEngine's process function
 			{
@@ -107,21 +109,21 @@ struct Prototype : Module {
 
 			// Params
 			for (int i = 0; i < NUM_ROWS; i++) {
-				if (block.knobs[i] != oldKnobs[i])
-					params[KNOB_PARAMS + i].setValue(block.knobs[i]);
+				if (block->knobs[i] != oldKnobs[i])
+					params[KNOB_PARAMS + i].setValue(block->knobs[i]);
 			}
 			// Lights
 			for (int i = 0; i < NUM_ROWS; i++)
 				for (int c = 0; c < 3; c++)
-					lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(block.lights[i][c]);
+					lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(block->lights[i][c]);
 			for (int i = 0; i < NUM_ROWS; i++)
 				for (int c = 0; c < 3; c++)
-					lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(block.switchLights[i][c]);
+					lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(block->switchLights[i][c]);
 		}
 
 		// Outputs
 		for (int i = 0; i < NUM_ROWS; i++)
-			outputs[OUT_OUTPUTS + i].setVoltage(block.outputs[i][bufferIndex]);
+			outputs[OUT_OUTPUTS + i].setVoltage(block->outputs[i][bufferIndex]);
 	}
 
 	void setPath(std::string path) {
@@ -192,7 +194,7 @@ struct Prototype : Module {
 		// Reset process state
 		frameDivider = 32;
 		frame = 0;
-		block = ScriptEngine::ProcessBlock();
+		*block = ScriptEngine::ProcessBlock();
 		bufferIndex = 0;
 		// Reset outputs and lights because they might hold old values
 		for (int i = 0; i < NUM_ROWS; i++)
@@ -215,7 +217,7 @@ struct Prototype : Module {
 			return;
 		}
 		scriptEngine->module = this;
-		scriptEngine->block = &block;
+		scriptEngine->block = block;
 
 		// Run script
 		if (scriptEngine->run(path, script)) {
@@ -224,6 +226,7 @@ struct Prototype : Module {
 			scriptEngine = NULL;
 			return;
 		}
+		block->bufferSize = clamp(block->bufferSize, 1, MAX_BUFFER_SIZE);
 		this->script = script;
 		this->engineName = scriptEngine->getEngineName();
 	}

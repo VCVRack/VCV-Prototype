@@ -91,8 +91,7 @@ struct DuktapeEngine : ScriptEngine {
 			duk_pop(ctx);
 			// bufferSize
 			duk_get_prop_string(ctx, -1, "bufferSize");
-			int bufferSize = duk_get_int(ctx, -1);
-			block->bufferSize = rack::clamp(bufferSize, 1, MAX_BUFFER_SIZE);
+			block->bufferSize = duk_get_int(ctx, -1);
 			duk_pop(ctx);
 		}
 		duk_pop(ctx);
