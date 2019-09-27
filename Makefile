@@ -2,9 +2,9 @@ RACK_DIR ?= ../..
 
 FLAGS +=
 CFLAGS +=
-CXXFLAGS +=
+CXXFLAGS += -g
 
-LDFLAGS +=
+LDFLAGS += -g
 
 SOURCES += $(wildcard src/*.cpp)
 
@@ -23,6 +23,17 @@ $(duktape):
 	cd dep && $(WGET) "https://duktape.org/duktape-2.4.0.tar.xz"
 	cd dep && $(SHA256) duktape-2.4.0.tar.xz 86a89307d1633b5cedb2c6e56dc86e92679fc34b05be551722d8cc69ab0771fc
 	cd dep && $(UNTAR) duktape-2.4.0.tar.xz
+
+# QuickJS
+quickjs := dep/QuickJS/libquickjs.a
+DEPS += $(quickjs)
+OBJECTS += $(quickjs)
+FLAGS += -Idep/QuickJS
+LDFLAGS += -Ldep/QuickJS -lquickjs
+
+$(quickjs):
+	cd dep && git clone "https://github.com/JerrySievert/QuickJS"
+	cd dep/QuickJS && $(MAKE)
 
 # # LuaJIT
 
