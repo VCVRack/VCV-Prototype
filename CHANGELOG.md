@@ -1,4 +1,6 @@
-### 1.1.1 (in development)
+### 1.1.1 (2019-09-27)
+- Switch JavaScript engine to QuickJS from Duktape. Supports ES2020 and is ~2x faster.
+- Automatically reload script when script file changes.
 - Make knobs writable.
 - Allow script to be loaded by dragging-and-dropping on the panel.
 - Add "Save script as" in panel context menu.
