@@ -1,4 +1,4 @@
-All **source code** is copyright © 2019 Andrew Belt and licensed under the [GNU General Public License v3.0](LICENSE-GPLv3.txt).
+All **source code** is copyright © 2019 Andrew Belt and VCV Prototype contributers and is licensed under the [GNU General Public License v3.0](LICENSE-GPLv3.txt).
 
 All **example scripts** in the `examples` directory are licensed under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/legalcode) (public domain).
 
