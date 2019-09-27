@@ -147,8 +147,12 @@ struct Prototype : Module {
 		// Watch file
 		FSW_STATUS err = fsw_init_library();
 		if (err == FSW_OK) {
-#ifdef ARCH_LIN
+#if defined ARCH_LIN
 			fsw_monitor_type type = inotify_monitor_type;
+#elif defined ARCH_MAC
+			fsw_monitor_type type = fsevents_monitor_type;
+#elif defined ARCH_WIN
+			fsw_monitor_type type = windows_monitor_type;
 #endif
 			fsw = fsw_init_session(type);
 			fsw_add_path(fsw, this->path.c_str());

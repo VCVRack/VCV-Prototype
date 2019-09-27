@@ -17,9 +17,9 @@ fswatch := dep/lib/libfswatch.a
 DEPS += $(fswatch)
 OBJECTS += $(fswatch)
 $(fswatch):
-	cd dep && $(WGET) "https://github.com/emcrisostomo/fswatch/releases/download/1.14.0/fswatch-1.14.0.tar.gz"
-	cd dep && $(SHA256) fswatch-1.14.0.tar.gz 44d5707adc0e46d901ba95a5dc35c5cc282bd6f331fcf9dbf9fad4af0ed5b29d
-	cd dep && $(UNTAR) fswatch-1.14.0.tar.gz
+	cd $(WGET) "https://github.com/emcrisostomo/fswatch/releases/download/1.14.0/fswatch-1.14.0.tar.gz"
+	cd $(SHA256) fswatch-1.14.0.tar.gz 44d5707adc0e46d901ba95a5dc35c5cc282bd6f331fcf9dbf9fad4af0ed5b29d
+	cd dep && $(UNTAR) ../fswatch-1.14.0.tar.gz
 	cd dep/fswatch-1.14.0 && $(CONFIGURE) --enable-shared=no
 	cd dep/fswatch-1.14.0 && $(MAKE)
 	cd dep/fswatch-1.14.0 && $(MAKE) install
