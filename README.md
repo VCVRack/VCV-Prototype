@@ -96,11 +96,12 @@ function process(block) {
 - Add your engine to the "List of ScriptEngines" in `src/ScriptEngine.cpp`.
 - Build and test the plugin.
 - Add a few example scripts and tests to `examples/`. These will be included in the plugin package for the user.
-- Add your name to the Contributers list below.
+- Add your name to the Contributors list below.
 - Send a pull request. Once merged, you will be added as a repo maintainer. Be sure to "watch" this repo to be notified of bugs in your engine.
 
-## Contributers
+## Contributors
 
 - [Wes Milholen](https://grayscale.info/): panel design
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript)
+- [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - add your name here
