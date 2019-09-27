@@ -2,9 +2,9 @@ RACK_DIR ?= ../..
 
 FLAGS +=
 CFLAGS +=
-CXXFLAGS += -g
+CXXFLAGS +=
 
-LDFLAGS += -g
+LDFLAGS +=
 
 SOURCES += $(wildcard src/*.cpp)
 
