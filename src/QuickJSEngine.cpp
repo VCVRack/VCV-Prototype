@@ -162,7 +162,7 @@ struct QuickJSEngine : ScriptEngine {
       JS_SetPropertyStr(ctx, blockIdx, "knobs", knobsIdx);
 
       // switches
-      JSValue switchesIdx = JS_NewArrayBuffer(ctx, (uint8_t *) &block->switches, sizeof(bool) * block->bufferSize, NULL, NULL, true);
+      JSValue switchesIdx = JS_NewArrayBuffer(ctx, (uint8_t *) &block->switches, sizeof(bool) * NUM_ROWS, NULL, NULL, true);
       JS_SetPropertyStr(ctx, blockIdx, "switches", switchesIdx);
 
       // lights
