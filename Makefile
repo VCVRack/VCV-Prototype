@@ -22,7 +22,7 @@ $(efsw):
 	cd dep && $(SHA256) e6afbec564e2.zip 8589dbedac7434f1863637af696354a9f1fcc28c6397c37b492a797ae62976be
 	cd dep && $(UNZIP) e6afbec564e2.zip
 	cd dep/SpartanJ-efsw-e6afbec564e2 && premake4 gmake
-	cd dep/SpartanJ-efsw-e6afbec564e2 && $(MAKE) -C make/windows config=release efsw-static-lib
+	cd dep/SpartanJ-efsw-e6afbec564e2 && $(MAKE) -C make/* config=release efsw-static-lib
 	cd dep/SpartanJ-efsw-e6afbec564e2 && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd dep/SpartanJ-efsw-e6afbec564e2 && cp -R include/efsw $(DEP_PATH)/include/
 

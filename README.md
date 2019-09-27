@@ -92,8 +92,13 @@ function process(block) {
 ## Build dependencies
 
 ### Windows
-```
+```bash
 pacman -S mingw-w64-x86_64-premake
+```
+
+### Mac
+```bash
+brew install premake
 ```
 
 ## Adding a script engine
