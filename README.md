@@ -37,7 +37,7 @@ config.frameDivider // 32
 voltages in a buffer and call process() when it is full.
 This decreases CPU usage, since processing buffers is faster than processing one
 frame at a time.
-The total latency of your script is
+The total latency of your script in seconds is
 `config.frameDivider * config.bufferSize * block.sampleTime`.
 */
 config.bufferSize // 1
@@ -67,7 +67,7 @@ function process(block) {
 	*/
 	block.outputs[i][bufferIndex] // 0.0
 
-	/** Value of the knob of column `i`. Between 0 and 1. Read-only.
+	/** Value of the knob of column `i`. Between 0 and 1. Writable.
 	*/
 	block.knobs[i] // 0.0
 
@@ -104,14 +104,3 @@ function process(block) {
 - [Wes Milholen](https://grayscale.info/): panel design
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript)
 - add your name here
-
-## License
-
-All **source code** is copyright © 2019 VCV Prototype Contributers and licensed under the [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
-
-The **panel graphics** in the `res` directory are copyright © 2019 [Grayscale](http://grayscale.info/) and licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
-You may not distribute modified adaptations of these graphics.
-
-**Dependencies** included in the binary distributable may have other licenses.
-For example, if a GPL library is included in the distributable, the entire work is covered by the GPL.
-See [LICENSE-dist.txt](LICENSE-dist.txt) for a full list.
