@@ -28,10 +28,11 @@ DEPS += $(quickjs)
 OBJECTS += $(quickjs)
 FLAGS += -Idep/QuickJS
 LDFLAGS += -Ldep/QuickJS -lquickjs
+MAKEQJSFLAGS :=
 
 $(quickjs):
 	cd dep && git clone "https://github.com/JerrySievert/QuickJS"
-	cd dep/QuickJS && $(MAKE)
+	cd dep/QuickJS && $(MAKE) $(MAKEQJSFLAGS)
 
 # # LuaJIT
 # luajit := dep/lib/luajit.a
@@ -86,3 +87,7 @@ $(quickjs):
 
 
 include $(RACK_DIR)/plugin.mk
+
+ifdef ARCH_WIN
+	MAKEQJSFLAGS += CONFIG_WIN32=y
+endif
