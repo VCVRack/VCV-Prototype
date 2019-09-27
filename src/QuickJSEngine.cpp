@@ -1,5 +1,5 @@
 #include "ScriptEngine.hpp"
-#include <quickjs.h>
+#include <quickjs/quickjs.h>
 
 static JSClassID QuickJSEngineClass;
 
@@ -189,9 +189,16 @@ struct QuickJSEngine : ScriptEngine {
     JS_SetPropertyStr(ctx, global_obj, "block", blockIdx);
 
     // this is a horrible hack to get QuickJS to allocate the correct types
-    std::string updateTypes = "for (var i = 0; i < 6; i++) { block.inputs[i] = new Float32Array(block.inputs[i]); block.outputs[i] = new Float32Array(block.outputs[i]); " \
-      "block.lights[i] = new Float32Array(block.lights[i]); block.switchLights[i] = new Float32Array(block.switchLights[i]); } " \
-      "block.knobs = new Float32Array(block.knobs); block.switches = new Uint8Array(block.switches);";
+    static const std::string updateTypes = R"(
+    for (var i = 0; i < 6; i++) {
+      block.inputs[i] = new Float32Array(block.inputs[i]);
+      block.outputs[i] = new Float32Array(block.outputs[i]);
+      block.lights[i] = new Float32Array(block.lights[i]);
+      block.switchLights[i] = new Float32Array(block.switchLights[i]);
+    }
+    block.knobs = new Float32Array(block.knobs);
+    block.switches = new Uint8Array(block.switches);
+    )";
 
     JSValue hack = JS_Eval(ctx, updateTypes.c_str(), updateTypes.size(), "QuickJS Hack", 0);
     if (JS_IsException(hack)) {

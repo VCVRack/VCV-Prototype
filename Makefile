@@ -35,16 +35,16 @@ $(duktape):
 	cd dep && $(UNTAR) ../duktape-2.4.0.tar.xz
 
 # QuickJS
-quickjs := dep/QuickJS/libquickjs.a
+quickjs := dep/lib/quickjs/libquickjs.a
 DEPS += $(quickjs)
 OBJECTS += $(quickjs)
-FLAGS += -Idep/QuickJS
-LDFLAGS += -Ldep/QuickJS -lquickjs
-MAKEQJSFLAGS :=
-
+QUICKJS_MAKE_FLAGS += prefix="$(DEP_PATH)"
+ifdef ARCH_WIN
+	QUICKJS_MAKE_FLAGS += CONFIG_WIN32=y
+endif
 $(quickjs):
-	cd dep && git clone "https://github.com/JerrySievert/QuickJS"
-	cd dep/QuickJS && $(MAKE) $(MAKEQJSFLAGS)
+	cd QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS)
+	cd QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 
 # # LuaJIT
 # luajit := dep/lib/luajit.a
@@ -99,7 +99,3 @@ $(quickjs):
 
 
 include $(RACK_DIR)/plugin.mk
-
-ifdef ARCH_WIN
-	MAKEQJSFLAGS += CONFIG_WIN32=y
-endif
