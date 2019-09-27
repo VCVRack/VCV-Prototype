@@ -50,12 +50,12 @@ struct ScriptEngine {
 // List of ScriptEngines
 
 // Add your createMyEngine() function here.
-ScriptEngine* createDuktapeEngine();
+ScriptEngine* createQuickJSEngine();
 
 inline ScriptEngine* createScriptEngine(std::string ext) {
 	ext = rack::string::lowercase(ext);
 	if (ext == "js")
-		return createDuktapeEngine();
+		return createQuickJSEngine();
 	// Add your file extension check here.
 	return NULL;
 }
