@@ -24,16 +24,6 @@ $(fswatch):
 	cd dep/fswatch-1.14.0 && $(MAKE)
 	cd dep/fswatch-1.14.0 && $(MAKE) install
 
-# Duktape
-duktape := dep/duktape-2.4.0/src/duktape.c
-DEPS += $(duktape)
-SOURCES += $(duktape)
-FLAGS += -Idep/duktape-2.4.0/src
-$(duktape):
-	$(WGET) "https://duktape.org/duktape-2.4.0.tar.xz"
-	$(SHA256) duktape-2.4.0.tar.xz 86a89307d1633b5cedb2c6e56dc86e92679fc34b05be551722d8cc69ab0771fc
-	cd dep && $(UNTAR) ../duktape-2.4.0.tar.xz
-
 # QuickJS
 quickjs := dep/lib/quickjs/libquickjs.a
 DEPS += $(quickjs)
