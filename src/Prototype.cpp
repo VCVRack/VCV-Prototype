@@ -193,6 +193,7 @@ struct Prototype : Module {
 
 		if (script == "")
 			return;
+		this->script = script;
 
 		// Create script engine from path extension
 		std::string ext = string::filenameExtension(string::filename(path));
@@ -212,7 +213,6 @@ struct Prototype : Module {
 			return;
 		}
 		block->bufferSize = clamp(block->bufferSize, 1, MAX_BUFFER_SIZE);
-		this->script = script;
 		this->engineName = scriptEngine->getEngineName();
 	}
 
