@@ -479,7 +479,6 @@ struct PrototypeWidget : ModuleWidget {
 	}
 };
 
-
 void init(Plugin* p) {
 	pluginInstance = p;
 

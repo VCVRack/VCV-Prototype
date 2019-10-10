@@ -63,11 +63,11 @@ function process(block) {
 	*/
 	block.inputs[i][bufferIndex] // 0.0
 
-	/** Voltage of the output port of column `i`. Writable.
+	/** Voltage of the output port of column `i`. Read/write.
 	*/
 	block.outputs[i][bufferIndex] // 0.0
 
-	/** Value of the knob of column `i`. Between 0 and 1. Writable.
+	/** Value of the knob of column `i`. Between 0 and 1. Read/write.
 	*/
 	block.knobs[i] // 0.0
 
@@ -75,13 +75,13 @@ function process(block) {
 	*/
 	block.switches[i] // false
 
-	/** Brightness of the RGB LED of column `i`, between 0 and 1. Writable.
+	/** Brightness of the RGB LED of column `i`, between 0 and 1. Read/write.
 	*/
 	block.lights[i][0] // 0.0 (red)
 	block.lights[i][1] // 0.0 (green)
 	block.lights[i][2] // 0.0 (blue)
 
-	/** Brightness of the switch RGB LED of column `i`. Writable.
+	/** Brightness of the switch RGB LED of column `i`. Read/write.
 	*/
 	block.switchLights[i][0] // 0.0 (red)
 	block.switchLights[i][1] // 0.0 (green)

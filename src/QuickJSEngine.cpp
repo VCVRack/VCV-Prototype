@@ -142,7 +142,7 @@ struct QuickJSEngine : ScriptEngine {
       for (int i = 0; i < NUM_ROWS; i++) {
         JSValue buffer = JS_NewArrayBuffer(ctx, (uint8_t *) block->inputs[i], sizeof(float) * block->bufferSize, NULL, NULL, true);
         if (JS_SetPropertyUint32(ctx, arr, i, buffer) < 0) {
-          rack::WARN("Unable to set property %d of inputs array", i);
+          WARN("Unable to set property %d of inputs array", i);
         }
       }
       JS_SetPropertyStr(ctx, blockIdx, "inputs", arr);
@@ -152,7 +152,7 @@ struct QuickJSEngine : ScriptEngine {
       for (int i = 0; i < NUM_ROWS; i++) {
         JSValue buffer = JS_NewArrayBuffer(ctx, (uint8_t *) block->outputs[i], sizeof(float) * block->bufferSize, NULL, NULL, true);
         if (JS_SetPropertyUint32(ctx, arr, i, buffer) < 0) {
-          rack::WARN("Unable to set property %d of outputs array", i);
+          WARN("Unable to set property %d of outputs array", i);
         }
       }
       JS_SetPropertyStr(ctx, blockIdx, "outputs", arr);
@@ -170,7 +170,7 @@ struct QuickJSEngine : ScriptEngine {
       for (int i = 0; i < NUM_ROWS; i++) {
         JSValue buffer = JS_NewArrayBuffer(ctx, (uint8_t *) &block->lights[i], sizeof(float) * 3, NULL, NULL, true);
         if (JS_SetPropertyUint32(ctx, arr, i, buffer) < 0) {
-          rack::WARN("Unable to set property %d of lights array", i);
+          WARN("Unable to set property %d of lights array", i);
         }
       }
       JS_SetPropertyStr(ctx, blockIdx, "lights", arr);
@@ -180,7 +180,7 @@ struct QuickJSEngine : ScriptEngine {
       for (int i = 0; i < NUM_ROWS; i++) {
         JSValue buffer = JS_NewArrayBuffer(ctx, (uint8_t *) &block->switchLights[i], sizeof(float) * 3, NULL, NULL, true);
         if (JS_SetPropertyUint32(ctx, arr, i, buffer) < 0) {
-          rack::WARN("Unable to set property %d of switchLights array", i);
+          WARN("Unable to set property %d of switchLights array", i);
         }
       }
       JS_SetPropertyStr(ctx, blockIdx, "switchLights", arr);
@@ -203,7 +203,7 @@ struct QuickJSEngine : ScriptEngine {
     JSValue hack = JS_Eval(ctx, updateTypes.c_str(), updateTypes.size(), "QuickJS Hack", 0);
     if (JS_IsException(hack)) {
       std::string errorString = ErrorToString(ctx);
-      rack::WARN("QuickJS: %s", errorString.c_str());
+      WARN("QuickJS: %s", errorString.c_str());
       setMessage(errorString.c_str());
     }
 
@@ -214,7 +214,7 @@ struct QuickJSEngine : ScriptEngine {
 
     if (JS_IsException(val)) {
       std::string errorString = ErrorToString(ctx);
-      rack::WARN("QuickJS: %s", errorString.c_str());
+      WARN("QuickJS: %s", errorString.c_str());
       setMessage(errorString.c_str());
 
       JS_FreeValue(ctx, val);
@@ -253,7 +253,7 @@ struct QuickJSEngine : ScriptEngine {
 
     if (JS_IsException(val)) {
       std::string errorString = ErrorToString(ctx);
-      rack::WARN("QuickJS: %s", errorString.c_str());
+      WARN("QuickJS: %s", errorString.c_str());
       setMessage(errorString.c_str());
 
       JS_FreeValue(ctx, val);
@@ -286,7 +286,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      rack::INFO("VCV Prototype: %s", s);
+      INFO("VCV Prototype: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -294,7 +294,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      rack::DEBUG("VCV Prototype: %s", s);
+      DEBUG("VCV Prototype: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -302,7 +302,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      rack::INFO("VCV Prototype: %s", s);
+      INFO("VCV Prototype: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -310,7 +310,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      rack::WARN("VCV Prototype: %s", s);
+      WARN("VCV Prototype: %s", s);
     }
 		return JS_UNDEFINED;
 	}

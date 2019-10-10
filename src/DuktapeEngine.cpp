@@ -66,7 +66,7 @@ struct DuktapeEngine : ScriptEngine {
 		duk_push_string(ctx, path.c_str());
 		if (duk_pcompile_lstring_filename(ctx, 0, script.c_str(), script.size()) != 0) {
 			const char* s = duk_safe_to_string(ctx, -1);
-			rack::WARN("duktape: %s", s);
+			WARN("duktape: %s", s);
 			setMessage(s);
 			duk_pop(ctx);
 			return -1;
@@ -74,7 +74,7 @@ struct DuktapeEngine : ScriptEngine {
 		// Execute function
 		if (duk_pcall(ctx, 0)) {
 			const char* s = duk_safe_to_string(ctx, -1);
-			rack::WARN("duktape: %s", s);
+			WARN("duktape: %s", s);
 			setMessage(s);
 			duk_pop(ctx);
 			return -1;
@@ -192,7 +192,7 @@ struct DuktapeEngine : ScriptEngine {
 		// Call process function
 		if (duk_pcall(ctx, 1)) {
 			const char* s = duk_safe_to_string(ctx, -1);
-			rack::WARN("duktape: %s", s);
+			WARN("duktape: %s", s);
 			setMessage(s);
 			duk_pop(ctx);
 			return -1;
@@ -212,17 +212,17 @@ struct DuktapeEngine : ScriptEngine {
 
 	static duk_ret_t native_console_log(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::INFO("VCV Prototype: %s", s);
+		INFO("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_console_debug(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::DEBUG("VCV Prototype: %s", s);
+		DEBUG("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_console_warn(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		rack::WARN("VCV Prototype: %s", s);
+		WARN("VCV Prototype: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_display(duk_context* ctx) {

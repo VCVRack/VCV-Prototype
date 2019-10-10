@@ -15,7 +15,7 @@ include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
 QUICKJS ?= 1
-PYTHON ?= 0
+PYTHON ?= 1
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -62,13 +62,17 @@ endif
 # Python
 ifeq ($(PYTHON), 1)
 SOURCES += src/PythonEngine.cpp
-python := dep/lib/libpython3.7m.so
+# Note this is a dynamic library, not static.
+python := dep/lib/libpython3.7m.so.1.0
 DEPS += $(python) $(numpy)
-# OBJECTS += $(python)
 FLAGS += -Idep/include/python3.7m
 # TODO Test these flags on all platforms
+# Make dynamic linker look in the plugin folder for libpython.
+LDFLAGS += -Wl,-rpath,'$$ORIGIN'/dep/lib
 LDFLAGS += -Ldep/lib -lpython3.7m
 LDFLAGS += -lcrypt -lpthread -ldl -lutil -lm
+DISTRIBUTABLES += $(python)
+DISTRIBUTABLES += dep/lib/python3.7
 $(python):
 	$(WGET) "https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tar.xz"
 	$(SHA256) Python-3.7.4.tar.xz fb799134b868199930b75f26678f18932214042639cd52b16da7fd134cd9b13f
@@ -84,7 +88,7 @@ $(numpy): $(python)
 	$(SHA256) numpy-1.17.2.tar.gz 81a4f748dcfa80a7071ad8f3d9f8edb9f8bc1f0a9bdd19bfd44fd42c02bd286c
 	cd dep && $(UNTAR) ../numpy-1.17.2.tar.gz
 	# Don't try to find an external BLAS and LAPACK library.
-	cd dep/numpy-1.17.2 && NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install install_headers
+	cd dep/numpy-1.17.2 && LD_LIBRARY_PATH=../lib NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install
 
 # scipy: $(numpy)
 # 	$(WGET) "https://github.com/scipy/scipy/releases/download/v1.3.1/scipy-1.3.1.tar.xz"
