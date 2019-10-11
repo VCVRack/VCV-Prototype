@@ -6,22 +6,22 @@
 config.frameDivider = 1
 config.bufferSize = 16
 
-var phase = 0
+let phase = 0
 function process(block) {
 	// Knob ranges from -5 to 5 octaves
-	var pitch = block.knobs[0] * 10 - 5
+	let pitch = block.knobs[0] * 10 - 5
 	// Input follows 1V/oct standard
 	pitch += block.inputs[0][0]
 
 	// The relationship between 1V/oct pitch and frequency is `freq = 2^pitch`.
 	// Default frequency is middle C (C4) in Hz.
 	// https://vcvrack.com/manual/VoltageStandards.html#pitch-and-frequencies
-	var freq = 261.6256 * Math.pow(2, pitch)
+	let freq = 261.6256 * Math.pow(2, pitch)
 	display("Freq: " + freq.toFixed(3) + " Hz")
 
 	// Set all samples in output buffer
-	var deltaPhase = config.frameDivider * block.sampleTime * freq
-	for (var i = 0; i < block.bufferSize; i++) {
+	let deltaPhase = config.frameDivider * block.sampleTime * freq
+	for (let i = 0; i < block.bufferSize; i++) {
 		// Accumulate phase
 		phase += deltaPhase
 		// Wrap phase around range [0, 1]
