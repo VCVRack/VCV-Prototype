@@ -1,9 +1,13 @@
 frame = 0
 
+print(config)
+print(config.frameDivider)
+print(config.bufferSize)
+
 def process(block):
 	global frame
 	frame += 1
-	print(frame)
+	display(frame)
 	# print(block)
 	# block.switch_lights[:, 2] = 1
 	print(block.inputs)
@@ -12,6 +16,6 @@ def process(block):
 	print(block.switches)
 	print(block.lights)
 	print(block.switch_lights)
-	print("===")
+	# print("===")
 
 print("Hello, world!")

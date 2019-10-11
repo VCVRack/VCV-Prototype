@@ -9,6 +9,14 @@ extern "C" {
 #include <thread>
 
 
+/*
+TODO:
+- Allow multiple instances with GIL.
+- Fix destructors.
+- Add config object.
+*/
+
+
 extern rack::Plugin* pluginInstance;
 
 
@@ -16,13 +24,12 @@ static void initPython() {
 	if (Py_IsInitialized())
 		return;
 
-	std::string pythonDir = rack::asset::plugin(pluginInstance, "dep/lib/python3.7");
+	std::string pythonDir = rack::asset::plugin(pluginInstance, "dep/lib/python3.8");
 	// Set python path
 	std::string sep = ":";
 	std::string pythonPath = pythonDir;
 	pythonPath += sep + pythonDir + "/lib-dynload";
-	// TODO Don't install to egg
-	pythonPath += sep + pythonDir + "/site-packages/numpy-1.17.2-py3.7-linux-x86_64.egg";
+	pythonPath += sep + pythonDir + "/site-packages";
 	wchar_t* pythonPathW = Py_DecodeLocale(pythonPath.c_str(), NULL);
 	Py_SetPath(pythonPathW);
 	PyMem_RawFree(pythonPathW);
@@ -30,10 +37,13 @@ static void initPython() {
 	Py_InitializeEx(0);
 	assert(Py_IsInitialized());
 
-	PyEval_InitThreads();
+	// PyEval_InitThreads();
 
 	// Import numpy
-	assert(_import_array() == 0);
+	if (_import_array()) {
+		PyErr_Print();
+		abort();
+	}
 }
 
 
@@ -59,6 +69,7 @@ struct PythonEngine : ScriptEngine {
 	}
 
 	int run(const std::string& path, const std::string& script) override {
+		ProcessBlock* block = getProcessBlock();
 		initPython();
 
 		// PyThreadState* tstate = PyThreadState_Get();
@@ -73,8 +84,8 @@ struct PythonEngine : ScriptEngine {
 		assert(mainDict);
 
 		// Set context pointer
-		PyObject* thisO = PyCapsule_New(this, NULL, NULL);
-		PyDict_SetItemString(mainDict, "this", thisO);
+		PyObject* engineObj = PyCapsule_New(this, NULL, NULL);
+		PyDict_SetItemString(mainDict, "_engine", engineObj);
 
 		// Add functions to globals
 		static PyMethodDef native_functions[] = {
@@ -85,6 +96,25 @@ struct PythonEngine : ScriptEngine {
 			WARN("Could not add global functions");
 			return -1;
 		}
+
+		// Set config
+		static PyStructSequence_Field configFields[] = {
+			{"frameDivider", ""},
+			{"bufferSize", ""},
+			{NULL, NULL},
+		};
+		static PyStructSequence_Desc configDesc = {"Config", "", configFields, LENGTHOF(configFields) - 1};
+		PyTypeObject* configType = PyStructSequence_NewType(&configDesc);
+		assert(configType);
+
+		PyObject* configObj = PyStructSequence_New(configType);
+		assert(configObj);
+		PyDict_SetItemString(mainDict, "config", configObj);
+
+		// frameDivider
+		PyStructSequence_SetItem(configObj, 0, PyLong_FromLong(32));
+		// bufferSize
+		PyStructSequence_SetItem(configObj, 1, PyLong_FromLong(1));
 
 		// Compile string
 		PyObject* code = Py_CompileString(script.c_str(), path.c_str(), Py_file_input);
@@ -103,7 +133,6 @@ struct PythonEngine : ScriptEngine {
 		DEFER({Py_DECREF(result);});
 
 		// Create block
-		ProcessBlock* block = getProcessBlock();
 		static PyStructSequence_Field blockFields[] = {
 			{"inputs", ""},
 			{"outputs", ""},
@@ -197,10 +226,10 @@ struct PythonEngine : ScriptEngine {
 	static PyObject* nativeDisplay(PyObject* self, PyObject* args) {
 		PyObject* mainDict = PyEval_GetGlobals();
 		assert(mainDict);
-		PyObject* thatO = PyDict_GetItemString(mainDict, "this");
-		assert(thatO);
-		PythonEngine* that = (PythonEngine*) PyCapsule_GetPointer(thatO, NULL);
-		assert(that);
+		PyObject* engineObj = PyDict_GetItemString(mainDict, "_engine");
+		assert(engineObj);
+		PythonEngine* engine = (PythonEngine*) PyCapsule_GetPointer(engineObj, NULL);
+		assert(engine);
 
 		PyObject* msgO = PyTuple_GetItem(args, 0);
 		if (!msgO)
@@ -210,7 +239,7 @@ struct PythonEngine : ScriptEngine {
 		DEFER({Py_DECREF(msgS);});
 
 		const char* msg = PyUnicode_AsUTF8(msgS);
-		that->display(msg);
+		engine->display(msg);
 
 		Py_INCREF(Py_None);
 		return Py_None;

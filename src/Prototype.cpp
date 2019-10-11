@@ -298,11 +298,10 @@ void ScriptEngine::display(const std::string& message) {
 	module->message = message;
 }
 void ScriptEngine::setFrameDivider(int frameDivider) {
-	module->frameDivider = frameDivider;
+	module->frameDivider = std::max(frameDivider, 1);
 }
 void ScriptEngine::setBufferSize(int bufferSize) {
-	bufferSize = clamp(bufferSize, 1, MAX_BUFFER_SIZE);
-	module->block->bufferSize = bufferSize;
+	module->block->bufferSize = clamp(bufferSize, 1, MAX_BUFFER_SIZE);
 }
 ProcessBlock* ScriptEngine::getProcessBlock() {
 	return module->block;

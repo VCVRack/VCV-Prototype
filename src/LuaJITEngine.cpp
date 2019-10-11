@@ -5,6 +5,11 @@
 struct LuaJITEngine : ScriptEngine {
 	lua_State* L = NULL;
 
+	struct SafeArray {
+		void* p;
+		size_t len;
+	};
+
 	~LuaJITEngine() {
 		if (L)
 			lua_close(L);
@@ -34,8 +39,8 @@ struct LuaJITEngine : ScriptEngine {
 		lua_setglobal(L, "_engine");
 
 		// Set global functions
-		lua_pushcfunction(L, native_print);
-		lua_setglobal(L, "print");
+		// lua_pushcfunction(L, native_print);
+		// lua_setglobal(L, "print");
 
 		lua_pushcfunction(L, native_display);
 		lua_setglobal(L, "display");
@@ -93,64 +98,99 @@ struct LuaJITEngine : ScriptEngine {
 			return -1;
 		}
 
+		// FloatArray metatable
+		lua_newtable(L);
+		{
+			// __index
+			lua_pushcfunction(L, native_FloatArray_index);
+			lua_setfield(L, -2, "__index");
+			// __newindex
+			lua_pushcfunction(L, native_FloatArray_newindex);
+			lua_setfield(L, -2, "__newindex");
+			// __len
+			lua_pushcfunction(L, native_FloatArray_len);
+			lua_setfield(L, -2, "__len");
+		}
+		lua_setglobal(L, "FloatArray");
+
+		// BoolArray metatable
+		lua_newtable(L);
+		{
+			// __index
+			lua_pushcfunction(L, native_BoolArray_index);
+			lua_setfield(L, -2, "__index");
+			// __newindex
+			lua_pushcfunction(L, native_BoolArray_newindex);
+			lua_setfield(L, -2, "__newindex");
+			// __len
+			lua_pushcfunction(L, native_BoolArray_len);
+			lua_setfield(L, -2, "__len");
+		}
+		lua_setglobal(L, "BoolArray");
+
 		// Create block object
 		lua_newtable(L);
 		{
 			// inputs
 			lua_newtable(L);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_newtable(L);
-				for (int j = 0; j < block->bufferSize; j++) {
-					lua_pushnumber(L, 0.0);
-					lua_rawseti(L, -2, j + 1);
-				}
+				SafeArray* input = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+				input->p = &block->inputs[i];
+				input->len = block->bufferSize;
+				lua_getglobal(L, "FloatArray");
+				lua_setmetatable(L, -2);
 				lua_rawseti(L, -2, i + 1);
 			}
 			lua_setfield(L, -2, "inputs");
+
 			// outputs
 			lua_newtable(L);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_newtable(L);
-				for (int j = 0; j < block->bufferSize; j++) {
-					lua_pushnumber(L, 0.0);
-					lua_rawseti(L, -2, j + 1);
-				}
+				SafeArray* output = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+				output->p = &block->outputs[i];
+				output->len = block->bufferSize;
+				lua_getglobal(L, "FloatArray");
+				lua_setmetatable(L, -2);
 				lua_rawseti(L, -2, i + 1);
 			}
 			lua_setfield(L, -2, "outputs");
+
 			// knobs
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_pushnumber(L, 0.0);
-				lua_rawseti(L, -2, i + 1);
-			}
+			SafeArray* knobs = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+			knobs->p = &block->knobs;
+			knobs->len = 6;
+			lua_getglobal(L, "FloatArray");
+			lua_setmetatable(L, -2);
 			lua_setfield(L, -2, "knobs");
+
 			// switches
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_pushboolean(L, false);
-				lua_rawseti(L, -2, i + 1);
-			}
+			SafeArray* switches = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+			switches->p = &block->switches;
+			switches->len = 6;
+			lua_getglobal(L, "BoolArray");
+			lua_setmetatable(L, -2);
 			lua_setfield(L, -2, "switches");
+
 			// lights
 			lua_newtable(L);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_newtable(L);
-				for (int c = 0; c < 3; c++) {
-					lua_pushnumber(L, 0.0);
-					lua_rawseti(L, -2, c + 1);
-				}
+				SafeArray* light = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+				light->p = &block->lights[i];
+				light->len = 3;
+				lua_getglobal(L, "FloatArray");
+				lua_setmetatable(L, -2);
 				lua_rawseti(L, -2, i + 1);
 			}
 			lua_setfield(L, -2, "lights");
+
 			// switchLights
 			lua_newtable(L);
 			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_newtable(L);
-				for (int c = 0; c < 3; c++) {
-					lua_pushnumber(L, 0.0);
-					lua_rawseti(L, -2, c + 1);
-				}
+				SafeArray* switchLight = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
+				switchLight->p = &block->switchLights[i];
+				switchLight->len = 3;
+				lua_getglobal(L, "FloatArray");
+				lua_setmetatable(L, -2);
 				lua_rawseti(L, -2, i + 1);
 			}
 			lua_setfield(L, -2, "switchLights");
@@ -175,32 +215,6 @@ struct LuaJITEngine : ScriptEngine {
 			// bufferSize
 			lua_pushinteger(L, block->bufferSize);
 			lua_setfield(L, -2, "bufferSize");
-
-			// inputs
-			lua_getfield(L, -1, "inputs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_rawgeti(L, -1, i + 1);
-				for (int j = 0; j < block->bufferSize; j++) {
-					lua_pushnumber(L, block->inputs[i][j]);
-					lua_rawseti(L, -2, j + 1);
-				}
-				lua_pop(L, 1);
-			}
-			lua_pop(L, 1);
-			// knobs
-			lua_getfield(L, -1, "knobs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_pushnumber(L, block->knobs[i]);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_pop(L, 1);
-			// switches
-			lua_getfield(L, -1, "switches");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_pushboolean(L, block->switches[i]);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_pop(L, 1);
 		}
 
 		// Duplicate process function
@@ -215,54 +229,6 @@ struct LuaJITEngine : ScriptEngine {
 			return -1;
 		}
 
-		// Get block
-		{
-			// outputs
-			lua_getfield(L, -1, "outputs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_rawgeti(L, -1, i + 1);
-				for (int j = 0; j < block->bufferSize; j++) {
-					lua_rawgeti(L, -1, j + 1);
-					block->outputs[i][j] = lua_tonumber(L, -1);
-					lua_pop(L, 1);
-				}
-				lua_pop(L, 1);
-			}
-			lua_pop(L, 1);
-			// knobs
-			lua_getfield(L, -1, "knobs");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_rawgeti(L, -1, i + 1);
-				block->knobs[i] = lua_tonumber(L, -1);
-				lua_pop(L, 1);
-			}
-			lua_pop(L, 1);
-			// lights
-			lua_getfield(L, -1, "lights");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_rawgeti(L, -1, i + 1);
-				for (int c = 0; c < 3; c++) {
-					lua_rawgeti(L, -1, c + 1);
-					block->lights[i][c] = lua_tonumber(L, -1);
-					lua_pop(L, 1);
-				}
-				lua_pop(L, 1);
-			}
-			lua_pop(L, 1);
-			// switchLights
-			lua_getfield(L, -1, "switchLights");
-			for (int i = 0; i < NUM_ROWS; i++) {
-				lua_rawgeti(L, -1, i + 1);
-				for (int c = 0; c < 3; c++) {
-					lua_rawgeti(L, -1, c + 1);
-					block->switchLights[i][c] = lua_tonumber(L, -1);
-					lua_pop(L, 1);
-				}
-				lua_pop(L, 1);
-			}
-			lua_pop(L, 1);
-		}
-
 		return 0;
 	}
 
@@ -273,14 +239,14 @@ struct LuaJITEngine : ScriptEngine {
 		return engine;
 	}
 
-	static int native_print(lua_State* L) {
-		lua_getglobal(L, "tostring");
-		lua_pushvalue(L, 1);
-		lua_call(L, 1, 1);
-		const char* s = lua_tostring(L, 1);
-		INFO("LuaJIT: %s", s);
-		return 0;
-	}
+	// static int native_print(lua_State* L) {
+	// 	lua_getglobal(L, "tostring");
+	// 	lua_pushvalue(L, 1);
+	// 	lua_call(L, 1, 1);
+	// 	const char* s = lua_tostring(L, 1);
+	// 	INFO("LuaJIT: %s", s);
+	// 	return 0;
+	// }
 
 	static int native_display(lua_State* L) {
 		lua_getglobal(L, "tostring");
@@ -291,6 +257,62 @@ struct LuaJITEngine : ScriptEngine {
 			s = "(null)";
 		getEngine(L)->display(s);
 		return 0;
+	}
+
+	static int native_FloatArray_index(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		float* data = (float*) a->p;
+		size_t index = lua_tointeger(L, 2) - 1;
+		if (index >= a->len) {
+			lua_pushstring(L, "Array out of bounds");
+			lua_error(L);
+		}
+		lua_pushnumber(L, data[index]);
+		return 1;
+	}
+	static int native_FloatArray_newindex(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		float* data = (float*) a->p;
+		size_t index = lua_tointeger(L, 2) - 1;
+		if (index >= a->len) {
+			lua_pushstring(L, "Array out of bounds");
+			lua_error(L);
+		}
+		data[index] = lua_tonumber(L, 3);
+		return 0;
+	}
+	static int native_FloatArray_len(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		lua_pushinteger(L, a->len);
+		return 1;
+	}
+
+	static int native_BoolArray_index(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		bool* data = (bool*) a->p;
+		size_t index = lua_tointeger(L, 2) - 1;
+		if (index >= a->len) {
+			lua_pushstring(L, "Array out of bounds");
+			lua_error(L);
+		}
+		lua_pushboolean(L, data[index]);
+		return 1;
+	}
+	static int native_BoolArray_newindex(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		bool* data = (bool*) a->p;
+		size_t index = lua_tointeger(L, 2) - 1;
+		if (index >= a->len) {
+			lua_pushstring(L, "Array out of bounds");
+			lua_error(L);
+		}
+		data[index] = lua_toboolean(L, 3);
+		return 0;
+	}
+	static int native_BoolArray_len(lua_State* L) {
+		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
+		lua_pushinteger(L, a->len);
+		return 1;
 	}
 };
 

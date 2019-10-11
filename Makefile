@@ -15,8 +15,8 @@ include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
 QUICKJS ?= 1
+LUAJIT ?= 1
 PYTHON ?= 1
-LUA ?= 1
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -60,46 +60,8 @@ $(quickjs):
 	cd QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
-# Python
-ifeq ($(PYTHON), 1)
-SOURCES += src/PythonEngine.cpp
-# Note this is a dynamic library, not static.
-python := dep/lib/libpython3.7m.so.1.0
-DEPS += $(python) $(numpy)
-FLAGS += -Idep/include/python3.7m
-# TODO Test these flags on all platforms
-# Make dynamic linker look in the plugin folder for libpython.
-LDFLAGS += -Wl,-rpath,'$$ORIGIN'/dep/lib
-LDFLAGS += -Ldep/lib -lpython3.7m
-LDFLAGS += -lcrypt -lpthread -ldl -lutil -lm
-DISTRIBUTABLES += $(python)
-DISTRIBUTABLES += dep/lib/python3.7
-$(python):
-	$(WGET) "https://www.python.org/ftp/python/3.7.4/Python-3.7.4.tar.xz"
-	$(SHA256) Python-3.7.4.tar.xz fb799134b868199930b75f26678f18932214042639cd52b16da7fd134cd9b13f
-	cd dep && $(UNTAR) ../Python-3.7.4.tar.xz
-	cd dep/Python-3.7.4 && $(CONFIGURE) --build=$(MACHINE) --enable-shared --enable-optimizations
-	cd dep/Python-3.7.4 && $(MAKE) build_all
-	cd dep/Python-3.7.4 && $(MAKE) install
-
-numpy := dep/lib/python3.7/site-packages/numpy-1.17.2-py3.7-linux-x86_64.egg
-FLAGS += -Idep/lib/python3.7/site-packages/numpy-1.17.2-py3.7-linux-x86_64.egg/numpy/core/include
-$(numpy): $(python)
-	$(WGET) "https://github.com/numpy/numpy/releases/download/v1.17.2/numpy-1.17.2.tar.gz"
-	$(SHA256) numpy-1.17.2.tar.gz 81a4f748dcfa80a7071ad8f3d9f8edb9f8bc1f0a9bdd19bfd44fd42c02bd286c
-	cd dep && $(UNTAR) ../numpy-1.17.2.tar.gz
-	# Don't try to find an external BLAS and LAPACK library.
-	cd dep/numpy-1.17.2 && LD_LIBRARY_PATH=../lib NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install
-
-# scipy: $(numpy)
-# 	$(WGET) "https://github.com/scipy/scipy/releases/download/v1.3.1/scipy-1.3.1.tar.xz"
-# 	$(SHA256) scipy-1.3.1.tar.xz 326ffdad79f113659ed0bca80f5d0ed5e28b2e967b438bb1f647d0738073a92e
-# 	cd dep && $(UNTAR) ../scipy-1.3.1.tar.xz
-# 	cd dep/scipy-1.3.1 && "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install
-endif
-
 # LuaJIT
-ifeq ($(LUA), 1)
+ifeq ($(LUAJIT), 1)
 SOURCES += src/LuaJITEngine.cpp
 luajit := dep/lib/libluajit-5.1.a
 OBJECTS += $(luajit)
@@ -110,6 +72,46 @@ $(luajit):
 	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
 	cd dep/LuaJIT-2.0.5 && $(MAKE)
 	cd dep/LuaJIT-2.0.5 && $(MAKE) PREFIX="$(DEP_PATH)" install
+endif
+
+# Python
+ifeq ($(PYTHON), 1)
+SOURCES += src/PythonEngine.cpp
+# Note this is a dynamic library, not static.
+python := dep/lib/libpython3.8.so.1.0
+DEPS += $(python) $(numpy)
+FLAGS += -Idep/include/python3.8
+# TODO Test these flags on all platforms
+# Make dynamic linker look in the plugin folder for libpython.
+LDFLAGS += -Wl,-rpath,'$$ORIGIN'/dep/lib
+LDFLAGS += -Ldep/lib -lpython3.8
+LDFLAGS += -lcrypt -lpthread -ldl -lutil -lm
+DISTRIBUTABLES += $(python)
+DISTRIBUTABLES += dep/lib/python3.8
+$(python):
+	$(WGET) "https://www.python.org/ftp/python/3.8.0/Python-3.8.0rc1.tar.xz"
+	$(SHA256) Python-3.8.0rc1.tar.xz ae44df6ccf5d70059dd4d04c97156f5fcace74384a6f3cfb2fdf9baddb90a821
+	cd dep && $(UNTAR) ../Python-3.8.0rc1.tar.xz
+	cd dep/Python-3.8.0rc1 && $(CONFIGURE) --build=$(MACHINE) --enable-shared --enable-optimizations
+	cd dep/Python-3.8.0rc1 && $(MAKE) build_all
+	cd dep/Python-3.8.0rc1 && $(MAKE) install
+
+numpy := dep/lib/python3.8/site-packages/numpy
+FLAGS += -Idep/lib/python3.8/site-packages/numpy/core/include
+$(numpy): $(python)
+	$(WGET) "https://github.com/numpy/numpy/releases/download/v1.17.2/numpy-1.17.2.tar.gz"
+	$(SHA256) numpy-1.17.2.tar.gz 81a4f748dcfa80a7071ad8f3d9f8edb9f8bc1f0a9bdd19bfd44fd42c02bd286c
+	cd dep && $(UNTAR) ../numpy-1.17.2.tar.gz
+	# Don't try to find an external BLAS and LAPACK library.
+	# Don't install to an egg folder.
+	# Make sure to use our built Python.
+	cd dep/numpy-1.17.2 && LD_LIBRARY_PATH=../lib NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.8 setup.py build -j4 install --single-version-externally-managed --root=/
+
+# scipy: $(numpy)
+# 	$(WGET) "https://github.com/scipy/scipy/releases/download/v1.3.1/scipy-1.3.1.tar.xz"
+# 	$(SHA256) scipy-1.3.1.tar.xz 326ffdad79f113659ed0bca80f5d0ed5e28b2e967b438bb1f647d0738073a92e
+# 	cd dep && $(UNTAR) ../scipy-1.3.1.tar.xz
+# 	cd dep/scipy-1.3.1 && "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install
 endif
 
 # # Julia
