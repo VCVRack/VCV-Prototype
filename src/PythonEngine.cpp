@@ -103,6 +103,7 @@ struct PythonEngine : ScriptEngine {
 		DEFER({Py_DECREF(result);});
 
 		// Create block
+		ProcessBlock* block = getProcessBlock();
 		static PyStructSequence_Field blockFields[] = {
 			{"inputs", ""},
 			{"outputs", ""},
@@ -154,11 +155,11 @@ struct PythonEngine : ScriptEngine {
 		// Get process function from globals
 		processFunc = PyDict_GetItemString(mainDict, "process");
 		if (!processFunc) {
-			setMessage("No process() function");
+			display("No process() function");
 			return -1;
 		}
 		if (!PyCallable_Check(processFunc)) {
-			setMessage("process() is not callable");
+			display("process() is not callable");
 			return -1;
 		}
 
@@ -181,7 +182,7 @@ struct PythonEngine : ScriptEngine {
 			// if (!str)
 			// 	return -1;
 
-			// setMessage(str);
+			// display(str);
 			return -1;
 		}
 		DEFER({Py_DECREF(processResult);});
@@ -209,7 +210,7 @@ struct PythonEngine : ScriptEngine {
 		DEFER({Py_DECREF(msgS);});
 
 		const char* msg = PyUnicode_AsUTF8(msgS);
-		that->setMessage(msg);
+		that->display(msg);
 
 		Py_INCREF(Py_None);
 		return Py_None;

@@ -41,7 +41,7 @@ struct Prototype : Module {
 	ScriptEngine* scriptEngine = NULL;
 	int frame = 0;
 	int frameDivider;
-	ScriptEngine::ProcessBlock* block;
+	ProcessBlock* block;
 	int bufferIndex = 0;
 
 	efsw_watcher efsw = NULL;
@@ -53,7 +53,7 @@ struct Prototype : Module {
 		for (int i = 0; i < NUM_ROWS; i++)
 			configParam(SWITCH_PARAMS + i, 0.f, 1.f, 0.f, string::f("Switch %d", i + 1));
 
-		block = new ScriptEngine::ProcessBlock;
+		block = new ProcessBlock;
 		setPath("");
 	}
 
@@ -179,7 +179,7 @@ struct Prototype : Module {
 		// Reset process state
 		frameDivider = 32;
 		frame = 0;
-		*block = ScriptEngine::ProcessBlock();
+		*block = ProcessBlock();
 		bufferIndex = 0;
 		// Reset outputs and lights because they might hold old values
 		for (int i = 0; i < NUM_ROWS; i++)
@@ -203,7 +203,6 @@ struct Prototype : Module {
 			return;
 		}
 		scriptEngine->module = this;
-		scriptEngine->block = block;
 
 		// Run script
 		if (scriptEngine->run(path, script)) {
@@ -212,7 +211,6 @@ struct Prototype : Module {
 			scriptEngine = NULL;
 			return;
 		}
-		block->bufferSize = clamp(block->bufferSize, 1, MAX_BUFFER_SIZE);
 		this->engineName = scriptEngine->getEngineName();
 	}
 
@@ -296,11 +294,18 @@ struct Prototype : Module {
 };
 
 
-void ScriptEngine::setMessage(const std::string& message) {
+void ScriptEngine::display(const std::string& message) {
 	module->message = message;
 }
 void ScriptEngine::setFrameDivider(int frameDivider) {
 	module->frameDivider = frameDivider;
+}
+void ScriptEngine::setBufferSize(int bufferSize) {
+	bufferSize = clamp(bufferSize, 1, MAX_BUFFER_SIZE);
+	module->block->bufferSize = bufferSize;
+}
+ProcessBlock* ScriptEngine::getProcessBlock() {
+	return module->block;
 }
 
 

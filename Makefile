@@ -16,6 +16,7 @@ include $(RACK_DIR)/arch.mk
 DUKTAPE ?= 0
 QUICKJS ?= 1
 PYTHON ?= 1
+LUA ?= 1
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -97,14 +98,19 @@ $(numpy): $(python)
 # 	cd dep/scipy-1.3.1 && "$(DEP_PATH)"/bin/python3.7 setup.py build -j4 install
 endif
 
-# # LuaJIT
-# luajit := dep/lib/luajit.a
-# DEPS += $(luajit)
-# $(luajit):
-# 	cd dep && $(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
-# 	cd dep && $(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
-# 	cd dep && $(UNTAR) LuaJIT-2.0.5.tar.gz
-# 	cd dep/LuaJIT-2.0.5 && $(MAKE)
+# LuaJIT
+ifeq ($(LUA), 1)
+SOURCES += src/LuaJITEngine.cpp
+luajit := dep/lib/libluajit-5.1.a
+OBJECTS += $(luajit)
+DEPS += $(luajit)
+$(luajit):
+	$(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
+	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
+	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
+	cd dep/LuaJIT-2.0.5 && $(MAKE)
+	cd dep/LuaJIT-2.0.5 && $(MAKE) PREFIX="$(DEP_PATH)" install
+endif
 
 # # Julia
 # julia := dep/lib/libjulia.a

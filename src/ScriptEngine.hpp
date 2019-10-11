@@ -9,21 +9,20 @@ static const int MAX_BUFFER_SIZE = 4096;
 struct Prototype;
 
 
-struct ScriptEngine {
-	struct ProcessBlock {
-		float sampleRate = 0.f;
-		float sampleTime = 0.f;
-		int bufferSize = 1;
-		float inputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
-		float outputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
-		float knobs[NUM_ROWS] = {};
-		bool switches[NUM_ROWS] = {};
-		float lights[NUM_ROWS][3] = {};
-		float switchLights[NUM_ROWS][3] = {};
-	};
-	/** Set by module */
-	ProcessBlock* block = NULL;
+struct ProcessBlock {
+	float sampleRate = 0.f;
+	float sampleTime = 0.f;
+	int bufferSize = 1;
+	float inputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
+	float outputs[NUM_ROWS][MAX_BUFFER_SIZE] = {};
+	float knobs[NUM_ROWS] = {};
+	bool switches[NUM_ROWS] = {};
+	float lights[NUM_ROWS][3] = {};
+	float switchLights[NUM_ROWS][3] = {};
+};
 
+
+struct ScriptEngine {
 	// Virtual methods for subclasses
 	virtual ~ScriptEngine() {}
 	virtual std::string getEngineName() {return "";}
@@ -40,8 +39,10 @@ struct ScriptEngine {
 
 	// Communication with Prototype module.
 	// These cannot be called from your constructor, so initialize your engine in the run() method.
-	void setMessage(const std::string& message);
+	void display(const std::string& message);
 	void setFrameDivider(int frameDivider);
+	void setBufferSize(int bufferSize);
+	ProcessBlock* getProcessBlock();
 	// private
 	Prototype* module = NULL;
 };
@@ -53,11 +54,14 @@ struct ScriptEngine {
 ScriptEngine* createDuktapeEngine();
 ScriptEngine* createQuickJSEngine();
 ScriptEngine* createPythonEngine();
+ScriptEngine* createLuaJITEngine();
 
 inline ScriptEngine* createScriptEngine(std::string ext) {
 	ext = rack::string::lowercase(ext);
 	if (ext == "js")
 		return createQuickJSEngine();
+	else if (ext == "lua")
+		return createLuaJITEngine();
 	else if (ext == "py")
 		return createPythonEngine();
 	// Add your file extension check here.

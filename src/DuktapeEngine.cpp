@@ -16,17 +16,19 @@ struct DuktapeEngine : ScriptEngine {
 
 	int run(const std::string& path, const std::string& script) override {
 		assert(!ctx);
+		ProcessBlock* block = getProcessBlock();
+
 		// Create duktape context
 		ctx = duk_create_heap_default();
 		if (!ctx) {
-			setMessage("Could not create duktape context");
+			display("Could not create duktape context");
 			return -1;
 		}
 
 		// Initialize globals
 		// user pointer
 		duk_push_pointer(ctx, this);
-		duk_put_global_string(ctx, DUK_HIDDEN_SYMBOL("p"));
+		duk_put_global_string(ctx, DUK_HIDDEN_SYMBOL("engine"));
 
 		// console
 		duk_idx_t consoleIdx = duk_push_object(ctx);
@@ -34,15 +36,6 @@ struct DuktapeEngine : ScriptEngine {
 			// log
 			duk_push_c_function(ctx, native_console_log, 1);
 			duk_put_prop_string(ctx, consoleIdx, "log");
-			// info (alias for log)
-			duk_push_c_function(ctx, native_console_log, 1);
-			duk_put_prop_string(ctx, consoleIdx, "info");
-			// debug
-			duk_push_c_function(ctx, native_console_debug, 1);
-			duk_put_prop_string(ctx, consoleIdx, "debug");
-			// warn
-			duk_push_c_function(ctx, native_console_warn, 1);
-			duk_put_prop_string(ctx, consoleIdx, "warn");
 		}
 		duk_put_global_string(ctx, "console");
 
@@ -67,7 +60,7 @@ struct DuktapeEngine : ScriptEngine {
 		if (duk_pcompile_lstring_filename(ctx, 0, script.c_str(), script.size()) != 0) {
 			const char* s = duk_safe_to_string(ctx, -1);
 			WARN("duktape: %s", s);
-			setMessage(s);
+			display(s);
 			duk_pop(ctx);
 			return -1;
 		}
@@ -75,7 +68,7 @@ struct DuktapeEngine : ScriptEngine {
 		if (duk_pcall(ctx, 0)) {
 			const char* s = duk_safe_to_string(ctx, -1);
 			WARN("duktape: %s", s);
-			setMessage(s);
+			display(s);
 			duk_pop(ctx);
 			return -1;
 		}
@@ -91,7 +84,7 @@ struct DuktapeEngine : ScriptEngine {
 			duk_pop(ctx);
 			// bufferSize
 			duk_get_prop_string(ctx, -1, "bufferSize");
-			block->bufferSize = duk_get_int(ctx, -1);
+			setBufferSize(duk_get_int(ctx, -1));
 			duk_pop(ctx);
 		}
 		duk_pop(ctx);
@@ -99,7 +92,7 @@ struct DuktapeEngine : ScriptEngine {
 		// Keep process function on stack for faster calling
 		duk_get_global_string(ctx, "process");
 		if (!duk_is_function(ctx, -1)) {
-			setMessage("No process() function");
+			display("No process() function");
 			return -1;
 		}
 
@@ -170,6 +163,7 @@ struct DuktapeEngine : ScriptEngine {
 
 	int process() override {
 		// block
+		ProcessBlock* block = getProcessBlock();
 		duk_idx_t blockIdx = duk_get_top(ctx) - 1;
 		{
 			// sampleRate
@@ -193,7 +187,7 @@ struct DuktapeEngine : ScriptEngine {
 		if (duk_pcall(ctx, 1)) {
 			const char* s = duk_safe_to_string(ctx, -1);
 			WARN("duktape: %s", s);
-			setMessage(s);
+			display(s);
 			duk_pop(ctx);
 			return -1;
 		}
@@ -204,7 +198,7 @@ struct DuktapeEngine : ScriptEngine {
 	}
 
 	static DuktapeEngine* getDuktapeEngine(duk_context* ctx) {
-		duk_get_global_string(ctx, DUK_HIDDEN_SYMBOL("p"));
+		duk_get_global_string(ctx, DUK_HIDDEN_SYMBOL("engine"));
 		DuktapeEngine* engine = (DuktapeEngine*) duk_get_pointer(ctx, -1);
 		duk_pop(ctx);
 		return engine;
@@ -212,22 +206,12 @@ struct DuktapeEngine : ScriptEngine {
 
 	static duk_ret_t native_console_log(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		INFO("VCV Prototype: %s", s);
-		return 0;
-	}
-	static duk_ret_t native_console_debug(duk_context* ctx) {
-		const char* s = duk_safe_to_string(ctx, -1);
-		DEBUG("VCV Prototype: %s", s);
-		return 0;
-	}
-	static duk_ret_t native_console_warn(duk_context* ctx) {
-		const char* s = duk_safe_to_string(ctx, -1);
-		WARN("VCV Prototype: %s", s);
+		INFO("Duktape: %s", s);
 		return 0;
 	}
 	static duk_ret_t native_display(duk_context* ctx) {
 		const char* s = duk_safe_to_string(ctx, -1);
-		getDuktapeEngine(ctx)->setMessage(s);
+		getDuktapeEngine(ctx)->display(s);
 		return 0;
 	}
 };

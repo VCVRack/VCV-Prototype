@@ -124,6 +124,6 @@ sudo pacman -S premake
 ## Contributors
 
 - [Wes Milholen](https://grayscale.info/): panel design
-- [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript)
+- [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript), LuaJIT (in development), Python (in development)
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - add your name here

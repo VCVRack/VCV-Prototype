@@ -65,7 +65,7 @@ struct QuickJSEngine : ScriptEngine {
 		// Create quickjs context
 		ctx = JS_NewContext(rt);
 		if (!ctx) {
-			setMessage("Could not create QuickJS context");
+			display("Could not create QuickJS context");
 			return -1;
 		}
 
@@ -107,13 +107,14 @@ struct QuickJSEngine : ScriptEngine {
 		// Compile string
     JSValue val = JS_Eval(ctx, script.c_str(), script.size(), path.c_str(), 0);
     if (JS_IsException(val)) {
-      setMessage(ErrorToString(ctx));
+      display(ErrorToString(ctx));
       JS_FreeValue(ctx, val);
       JS_FreeValue(ctx, global_obj);
 
       return -1;
     }
 
+    ProcessBlock* block = getProcessBlock();
     // config: Read values
     config = JS_GetPropertyStr(ctx, global_obj, "config");
     {
@@ -128,7 +129,7 @@ struct QuickJSEngine : ScriptEngine {
       JSValue buffer = JS_GetPropertyStr(ctx, config, "bufferSize");
       int32_t bufferValue;
       if (JS_ToInt32(ctx, &bufferValue, buffer) == 0) {
-        block->bufferSize = bufferValue;
+        setBufferSize(bufferValue);
       }
 
       JS_FreeValue(ctx, config);
@@ -204,7 +205,7 @@ struct QuickJSEngine : ScriptEngine {
     if (JS_IsException(hack)) {
       std::string errorString = ErrorToString(ctx);
       WARN("QuickJS: %s", errorString.c_str());
-      setMessage(errorString.c_str());
+      display(errorString.c_str());
     }
 
     JS_FreeValue(ctx, hack);
@@ -215,7 +216,7 @@ struct QuickJSEngine : ScriptEngine {
     if (JS_IsException(val)) {
       std::string errorString = ErrorToString(ctx);
       WARN("QuickJS: %s", errorString.c_str());
-      setMessage(errorString.c_str());
+      display(errorString.c_str());
 
       JS_FreeValue(ctx, val);
       JS_FreeValue(ctx, blockIdx);
@@ -232,6 +233,7 @@ struct QuickJSEngine : ScriptEngine {
     JSValue global_obj = JS_GetGlobalObject(ctx);
 
     // block
+    ProcessBlock* block = getProcessBlock();
     JSValue blockIdx = JS_GetPropertyStr(ctx, global_obj, "block");
     {
       // sampleRate
@@ -254,7 +256,7 @@ struct QuickJSEngine : ScriptEngine {
     if (JS_IsException(val)) {
       std::string errorString = ErrorToString(ctx);
       WARN("QuickJS: %s", errorString.c_str());
-      setMessage(errorString.c_str());
+      display(errorString.c_str());
 
       JS_FreeValue(ctx, val);
       JS_FreeValue(ctx, process);
@@ -286,7 +288,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      INFO("VCV Prototype: %s", s);
+      INFO("QuickJS: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -294,7 +296,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      DEBUG("VCV Prototype: %s", s);
+      DEBUG("QuickJS: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -302,7 +304,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      INFO("VCV Prototype: %s", s);
+      INFO("QuickJS: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -310,7 +312,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-      WARN("VCV Prototype: %s", s);
+      WARN("QuickJS: %s", s);
     }
 		return JS_UNDEFINED;
 	}
@@ -318,7 +320,7 @@ struct QuickJSEngine : ScriptEngine {
                                     int argc, JSValueConst *argv) {
     if (argc) {
       const char *s = JS_ToCString(ctx, argv[0]);
-  		getQuickJSEngine(ctx)->setMessage(s);
+  		getQuickJSEngine(ctx)->display(s);
     }
 		return JS_UNDEFINED;
 	}

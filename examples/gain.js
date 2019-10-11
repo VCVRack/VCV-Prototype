@@ -3,13 +3,13 @@
 
 function process(block) {
 	// Loop through each column
-	for (var i = 0; i < 6; i++) {
+	for (let i = 0; i < 6; i++) {
 		// Get input
-		var x = block.inputs[i][0]
+		let x = block.inputs[i][0]
 		// Get gain knob
-		var gain = block.knobs[i]
+		let gain = block.knobs[i]
 		// Apply gain to input
-		var y = x * gain
+		let y = x * gain
 		// Set gain light (red = 0)
 		block.lights[i][0] = gain
 		// Check mute switch
