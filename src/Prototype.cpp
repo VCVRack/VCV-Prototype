@@ -3,14 +3,19 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <mutex>
 #include <thread>
+#include <mutex>
 #include "ScriptEngine.hpp"
 #include <efsw/efsw.h>
 
 
 using namespace rack;
 Plugin* pluginInstance;
+
+
+// Global warning message for script security
+bool securityRequested = false;
+bool securityAccepted = false;
 
 
 struct Prototype : Module {
@@ -36,6 +41,8 @@ struct Prototype : Module {
 	std::string message;
 	std::string path;
 	std::string script;
+	/** Script that has not yet been approved to load */
+	std::string securityScript;
 	std::string engineName;
 	std::mutex scriptMutex;
 	ScriptEngine* scriptEngine = NULL;
@@ -72,6 +79,12 @@ struct Prototype : Module {
 			return;
 		frame = 0;
 
+		// Load security-sandboxed script if the security warning message is accepted.
+		if (securityScript != "" && securityAccepted) {
+			setScript(securityScript);
+			securityScript = "";
+		}
+
 		// Inputs
 		for (int i = 0; i < NUM_ROWS; i++)
 			block->inputs[i][bufferIndex] = inputs[IN_INPUTS + i].getVoltage();
@@ -94,8 +107,8 @@ struct Prototype : Module {
 
 			// Run ScriptEngine's process function
 			{
+				// Process buffer
 				std::lock_guard<std::mutex> lock(scriptMutex);
-				// Check for certain inside the mutex
 				if (scriptEngine) {
 					if (scriptEngine->process()) {
 						WARN("Script %s process() failed. Stopped script.", path.c_str());
@@ -229,6 +242,11 @@ struct Prototype : Module {
 		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "path", json_string(path.c_str()));
+
+		std::string script = this->script;
+		// If we haven't accepted the security of this script, serialize the security-sandboxed script anyway.
+		if (script == "")
+			script = securityScript;
 		json_object_set_new(rootJ, "script", json_stringn(script.data(), script.size()));
 
 		return rootJ;
@@ -247,7 +265,13 @@ struct Prototype : Module {
 			json_t* scriptJ = json_object_get(rootJ, "script");
 			if (scriptJ) {
 				std::string script = std::string(json_string_value(scriptJ), json_string_length(scriptJ));
-				setScript(script);
+				if (script != "") {
+					// Request security warning message
+					if (!securityAccepted) {
+						securityRequested = true;
+					}
+					securityScript = script;
+				}
 			}
 		}
 	}
@@ -480,6 +504,16 @@ struct PrototypeWidget : ModuleWidget {
 		if (module && e.paths.size() >= 1) {
 			module->setPath(e.paths[0]);
 		}
+	}
+
+	void step() override {
+		if (securityRequested) {
+			if (osdialog_message(OSDIALOG_WARNING, OSDIALOG_OK_CANCEL, "VCV Prototype is about to load a script from a patch or module preset. Running Prototype scripts from untrusted sources may compromise your computer and personal information. Proceed and don't display this message again?")) {
+				securityAccepted = true;
+			}
+			securityRequested = false;
+		}
+		ModuleWidget::step();
 	}
 };
 
