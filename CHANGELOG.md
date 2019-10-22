@@ -1,3 +1,7 @@
+### 1.2.0 (in development)
+- Add Lua script engine.
+- Add security warning when loading script from patch or module preset.
+
 ### 1.1.1 (2019-09-27)
 - Switch JavaScript engine to QuickJS from Duktape. Supports ES2020 and is ~2x faster.
 - Automatically reload script when script file changes.

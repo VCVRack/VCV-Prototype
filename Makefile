@@ -70,8 +70,7 @@ $(luajit):
 	$(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
 	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
 	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
-	cd dep/LuaJIT-2.0.5 && $(MAKE)
-	cd dep/LuaJIT-2.0.5 && $(MAKE) PREFIX="$(DEP_PATH)" install
+	cd dep/LuaJIT-2.0.5 && $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
 endif
 
 # Python

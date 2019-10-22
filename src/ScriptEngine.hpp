@@ -59,7 +59,7 @@ __attribute__((constructor(1000)))
 template<typename TScriptEngine>
 void addScriptEngine(std::string extension) {
 	struct TScriptEngineFactory : ScriptEngineFactory {
-		ScriptEngine* createScriptEngine() {
+		ScriptEngine* createScriptEngine() override {
 			return new TScriptEngine;
 		}
 	};
