@@ -48,22 +48,20 @@ struct ScriptEngine {
 };
 
 
-// List of ScriptEngines
+struct ScriptEngineFactory {
+	virtual ScriptEngine* createScriptEngine() = 0;
+};
+extern std::map<std::string, ScriptEngineFactory*> scriptEngineFactories;
 
-// Add your createMyEngine() function here.
-ScriptEngine* createDuktapeEngine();
-ScriptEngine* createQuickJSEngine();
-ScriptEngine* createPythonEngine();
-ScriptEngine* createLuaJITEngine();
-
-inline ScriptEngine* createScriptEngine(std::string ext) {
-	ext = rack::string::lowercase(ext);
-	if (ext == "js")
-		return createQuickJSEngine();
-	else if (ext == "lua")
-		return createLuaJITEngine();
-	else if (ext == "py")
-		return createPythonEngine();
-	// Add your file extension check here.
-	return NULL;
+/** Called from functions with
+__attribute__((constructor(1000)))
+*/
+template<typename TScriptEngine>
+void addScriptEngine(std::string extension) {
+	struct TScriptEngineFactory : ScriptEngineFactory {
+		ScriptEngine* createScriptEngine() {
+			return new TScriptEngine;
+		}
+	};
+	scriptEngineFactories[extension] = new TScriptEngineFactory;
 }

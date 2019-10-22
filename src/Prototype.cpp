@@ -13,6 +13,18 @@ using namespace rack;
 Plugin* pluginInstance;
 
 
+// Don't bother deleting this with a destructor.
+__attribute((init_priority(999)))
+std::map<std::string, ScriptEngineFactory*> scriptEngineFactories;
+
+ScriptEngine* createScriptEngine(std::string extension) {
+	auto it = scriptEngineFactories.find(extension);
+	if (it == scriptEngineFactories.end())
+		return NULL;
+	return it->second->createScriptEngine();
+}
+
+
 // Global warning message for script security
 bool securityRequested = false;
 bool securityAccepted = false;
@@ -253,10 +265,10 @@ struct Prototype : Module {
 		this->script = script;
 
 		// Create script engine from path extension
-		std::string ext = string::filenameExtension(string::filename(path));
-		scriptEngine = createScriptEngine(ext);
+		std::string extension = string::filenameExtension(string::filename(path));
+		scriptEngine = createScriptEngine(extension);
 		if (!scriptEngine) {
-			message = string::f("No engine for .%s extension", ext.c_str());
+			message = string::f("No engine for .%s extension", extension.c_str());
 			return;
 		}
 		scriptEngine->module = this;

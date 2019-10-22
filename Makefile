@@ -16,7 +16,7 @@ include $(RACK_DIR)/arch.mk
 DUKTAPE ?= 0
 QUICKJS ?= 1
 LUAJIT ?= 1
-PYTHON ?= 1
+PYTHON ?= 0
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a

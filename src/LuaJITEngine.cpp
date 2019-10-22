@@ -317,6 +317,7 @@ struct LuaJITEngine : ScriptEngine {
 };
 
 
-ScriptEngine* createLuaJITEngine() {
-	return new LuaJITEngine;
+__attribute__((constructor(1000)))
+static void constructor() {
+	addScriptEngine<LuaJITEngine>("lua");
 }

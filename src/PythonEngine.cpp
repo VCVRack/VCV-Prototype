@@ -247,6 +247,7 @@ struct PythonEngine : ScriptEngine {
 };
 
 
-ScriptEngine* createPythonEngine() {
-	return new PythonEngine;
+__attribute__((constructor(1000)))
+static void constructor() {
+	addScriptEngine<PythonEngine>("py");
 }

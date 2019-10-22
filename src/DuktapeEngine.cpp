@@ -217,6 +217,7 @@ struct DuktapeEngine : ScriptEngine {
 };
 
 
-ScriptEngine* createDuktapeEngine() {
-	return new DuktapeEngine;
+__attribute__((constructor(1000)))
+static void constructor() {
+	addScriptEngine<DuktapeEngine>("js");
 }
