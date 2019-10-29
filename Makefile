@@ -88,23 +88,23 @@ LDFLAGS += -lcrypt -lpthread -ldl -lutil -lm
 DISTRIBUTABLES += $(python)
 DISTRIBUTABLES += dep/lib/python3.8
 $(python):
-	$(WGET) "https://www.python.org/ftp/python/3.8.0/Python-3.8.0rc1.tar.xz"
-	$(SHA256) Python-3.8.0rc1.tar.xz ae44df6ccf5d70059dd4d04c97156f5fcace74384a6f3cfb2fdf9baddb90a821
-	cd dep && $(UNTAR) ../Python-3.8.0rc1.tar.xz
-	cd dep/Python-3.8.0rc1 && $(CONFIGURE) --build=$(MACHINE) --enable-shared --enable-optimizations
-	cd dep/Python-3.8.0rc1 && $(MAKE) build_all
-	cd dep/Python-3.8.0rc1 && $(MAKE) install
+	$(WGET) "https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tar.xz"
+	$(SHA256) Python-3.8.0.tar.xz b356244e13fb5491da890b35b13b2118c3122977c2cd825e3eb6e7d462030d84
+	cd dep && $(UNTAR) ../Python-3.8.0.tar.xz
+	cd dep/Python-3.8.0 && $(CONFIGURE) --build=$(MACHINE) --enable-shared --enable-optimizations
+	cd dep/Python-3.8.0 && $(MAKE) build_all
+	cd dep/Python-3.8.0 && $(MAKE) install
 
 numpy := dep/lib/python3.8/site-packages/numpy
 FLAGS += -Idep/lib/python3.8/site-packages/numpy/core/include
 $(numpy): $(python)
-	$(WGET) "https://github.com/numpy/numpy/releases/download/v1.17.2/numpy-1.17.2.tar.gz"
-	$(SHA256) numpy-1.17.2.tar.gz 81a4f748dcfa80a7071ad8f3d9f8edb9f8bc1f0a9bdd19bfd44fd42c02bd286c
-	cd dep && $(UNTAR) ../numpy-1.17.2.tar.gz
+	$(WGET) "https://github.com/numpy/numpy/releases/download/v1.17.3/numpy-1.17.3.tar.gz"
+	$(SHA256) numpy-1.17.3.tar.gz c93733dbebc2599d2747ceac4b18825a73767d289176ed8e02090325656d69aa
+	cd dep && $(UNTAR) ../numpy-1.17.3.tar.gz
 	# Don't try to find an external BLAS and LAPACK library.
 	# Don't install to an egg folder.
 	# Make sure to use our built Python.
-	cd dep/numpy-1.17.2 && LD_LIBRARY_PATH=../lib NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.8 setup.py build -j4 install --single-version-externally-managed --root=/
+	cd dep/numpy-1.17.3 && LD_LIBRARY_PATH=../lib NPY_BLAS_ORDER= NPY_LAPACK_ORDER= "$(DEP_PATH)"/bin/python3.8 setup.py build -j4 install --single-version-externally-managed --root=/
 
 # scipy: $(numpy)
 # 	$(WGET) "https://github.com/scipy/scipy/releases/download/v1.3.1/scipy-1.3.1.tar.xz"
