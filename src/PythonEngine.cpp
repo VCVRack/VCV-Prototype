@@ -11,9 +11,12 @@ extern "C" {
 
 /*
 TODO:
+- Fix Numpy loading on Linux.
+	- "undefined symbol: PyExc_RecursionError"
+	- This worked in Python 3.7, but because some other crash (regarding GIL interpreter objects, I forgot) was fixed on Python's issue tracker in the last month, I switched to Python 3.8 to solve that problem.
+- Test build and running on Windows/Mac. (Has not been attempted.)
 - Allow multiple instances with GIL.
 - Fix destructors.
-- Add config object.
 */
 
 
