@@ -1,7 +1,7 @@
 // Voltage-controlled oscillator example
 // by Andrew Belt
 
-// JavaScript isn't ideal for audio generating and processing due to it being 10-100 less efficient than C++, but it's still an easy way to learn simple DSP.
+// For audio synthesis and process, JavaScript is 10-100x less efficient than C++, but it's still an easy way to learn to program DSP.
 
 config.frameDivider = 1
 config.bufferSize = 16
@@ -11,6 +11,7 @@ function process(block) {
 	// Knob ranges from -5 to 5 octaves
 	let pitch = block.knobs[0] * 10 - 5
 	// Input follows 1V/oct standard
+	// Take the first input's first buffer value
 	pitch += block.inputs[0][0]
 
 	// The relationship between 1V/oct pitch and frequency is `freq = 2^pitch`.
