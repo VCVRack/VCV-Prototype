@@ -25,53 +25,49 @@ ScriptEngine* createScriptEngine(std::string extension) {
 }
 
 
-// Global warning message for script security
-bool securityRequested = false;
-bool securityAccepted = false;
+// json_t *settingsToJson() {
+// 	json_t *rootJ = json_object();
+// 	json_object_set_new(rootJ, "securityAccepted", json_boolean(securityAccepted));
+// 	return rootJ;
+// }
 
-json_t *settingsToJson() {
-	json_t *rootJ = json_object();
-	json_object_set_new(rootJ, "securityAccepted", json_boolean(securityAccepted));
-	return rootJ;
-}
+// void settingsFromJson(json_t *rootJ) {
+// 	json_t *securityAcceptedJ = json_object_get(rootJ, "securityAccepted");
+// 	if (securityAcceptedJ)
+// 		securityAccepted = json_boolean_value(securityAcceptedJ);
+// }
 
-void settingsFromJson(json_t *rootJ) {
-	json_t *securityAcceptedJ = json_object_get(rootJ, "securityAccepted");
-	if (securityAcceptedJ)
-		securityAccepted = json_boolean_value(securityAcceptedJ);
-}
+// void settingsLoad() {
+// 	// Load plugin settings
+// 	std::string filename = asset::user("VCV-Prototype.json");
+// 	FILE *file = fopen(filename.c_str(), "r");
+// 	if (!file) {
+// 		return;
+// 	}
+// 	DEFER({
+// 		fclose(file);
+// 	});
 
-void settingsLoad() {
-	// Load plugin settings
-	std::string filename = asset::user("VCV-Prototype.json");
-	FILE *file = fopen(filename.c_str(), "r");
-	if (!file) {
-		return;
-	}
-	DEFER({
-		fclose(file);
-	});
+// 	json_error_t error;
+// 	json_t *rootJ = json_loadf(file, 0, &error);
+// 	if (rootJ) {
+// 		settingsFromJson(rootJ);
+// 		json_decref(rootJ);
+// 	}
+// }
 
-	json_error_t error;
-	json_t *rootJ = json_loadf(file, 0, &error);
-	if (rootJ) {
-		settingsFromJson(rootJ);
-		json_decref(rootJ);
-	}
-}
+// void settingsSave() {
+// 	json_t *rootJ = settingsToJson();
 
-void settingsSave() {
-	json_t *rootJ = settingsToJson();
+// 	std::string filename = asset::user("VCV-Prototype.json");
+// 	FILE *file = fopen(filename.c_str(), "w");
+// 	if (file) {
+// 		json_dumpf(rootJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
+// 		fclose(file);
+// 	}
 
-	std::string filename = asset::user("VCV-Prototype.json");
-	FILE *file = fopen(filename.c_str(), "w");
-	if (file) {
-		json_dumpf(rootJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
-		fclose(file);
-	}
-
-	json_decref(rootJ);
-}
+// 	json_decref(rootJ);
+// }
 
 
 struct Prototype : Module {
@@ -97,8 +93,6 @@ struct Prototype : Module {
 	std::string message;
 	std::string path;
 	std::string script;
-	/** Script that has not yet been approved to load */
-	std::string securityScript;
 	std::string engineName;
 	std::mutex scriptMutex;
 	ScriptEngine* scriptEngine = NULL;
@@ -108,6 +102,11 @@ struct Prototype : Module {
 	int bufferIndex = 0;
 
 	efsw_watcher efsw = NULL;
+
+	/** Script that has not yet been approved to load */
+	std::string securityScript;
+	bool securityRequested = false;
+	bool securityAccepted = false;
 
 	Prototype() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -563,12 +562,12 @@ struct PrototypeWidget : ModuleWidget {
 	}
 
 	void step() override {
-		if (securityRequested) {
-			if (osdialog_message(OSDIALOG_WARNING, OSDIALOG_OK_CANCEL, "VCV Prototype is about to load a script from a patch or module preset. Running Prototype scripts from untrusted sources may compromise your computer and personal information. Proceed and don't display this message again?")) {
-				securityAccepted = true;
-				settingsSave();
+		Prototype* module = dynamic_cast<Prototype*>(this->module);
+		if (module && module->securityRequested) {
+			if (osdialog_message(OSDIALOG_WARNING, OSDIALOG_OK_CANCEL, "VCV Prototype is requesting to run a script from a patch or module preset. Running Prototype scripts from untrusted sources may compromise your computer and personal information. Proceed and run script?")) {
+				module->securityAccepted = true;
 			}
-			securityRequested = false;
+			module->securityRequested = false;
 		}
 		ModuleWidget::step();
 	}
@@ -578,6 +577,4 @@ void init(Plugin* p) {
 	pluginInstance = p;
 
 	p->addModel(createModel<Prototype, PrototypeWidget>("Prototype"));
-
-	settingsLoad();
 }
