@@ -98,6 +98,7 @@ struct Prototype : Module {
 	ScriptEngine* scriptEngine = NULL;
 	int frame = 0;
 	int frameDivider;
+	// This is dynamically allocated to have some protection against script bugs.
 	ProcessBlock* block;
 	int bufferIndex = 0;
 
@@ -129,15 +130,28 @@ struct Prototype : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
+		// Load security-sandboxed script if the security warning message is accepted.
+		if (securityScript != "" && securityAccepted) {
+			setScript(securityScript);
+			securityScript = "";
+		}
+
 		// Frame divider for reducing sample rate
 		if (++frame < frameDivider)
 			return;
 		frame = 0;
 
-		// Load security-sandboxed script if the security warning message is accepted.
-		if (securityScript != "" && securityAccepted) {
-			setScript(securityScript);
-			securityScript = "";
+		// Clear outputs if no script is running
+		if (!scriptEngine) {
+			for (int i = 0; i < NUM_ROWS; i++)
+				for (int c = 0; c < 3; c++)
+					lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(0.f);
+			for (int i = 0; i < NUM_ROWS; i++)
+				for (int c = 0; c < 3; c++)
+					lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(0.f);
+			for (int i = 0; i < NUM_ROWS; i++)
+				outputs[OUT_OUTPUTS + i].setVoltage(0.f);
+			return;
 		}
 
 		// Inputs
@@ -146,6 +160,7 @@ struct Prototype : Module {
 
 		// Process block
 		if (++bufferIndex >= block->bufferSize) {
+			std::lock_guard<std::mutex> lock(scriptMutex);
 			bufferIndex = 0;
 
 			// Block settings
@@ -158,12 +173,11 @@ struct Prototype : Module {
 			for (int i = 0; i < NUM_ROWS; i++)
 				block->switches[i] = params[SWITCH_PARAMS + i].getValue() > 0.f;
 			float oldKnobs[NUM_ROWS];
-			std::memcpy(oldKnobs, block->knobs, sizeof(block->knobs));
+			std::memcpy(oldKnobs, block->knobs, sizeof(oldKnobs));
 
 			// Run ScriptEngine's process function
 			{
 				// Process buffer
-				std::lock_guard<std::mutex> lock(scriptMutex);
 				if (scriptEngine) {
 					if (scriptEngine->process()) {
 						WARN("Script %s process() failed. Stopped script.", path.c_str());
@@ -175,6 +189,7 @@ struct Prototype : Module {
 			}
 
 			// Params
+			// Only set params if values were changed by the script. This avoids issues when the user is manipulating them from the UI thread.
 			for (int i = 0; i < NUM_ROWS; i++) {
 				if (block->knobs[i] != oldKnobs[i])
 					params[KNOB_PARAMS + i].setValue(block->knobs[i]);
@@ -247,17 +262,9 @@ struct Prototype : Module {
 		// Reset process state
 		frameDivider = 32;
 		frame = 0;
-		*block = ProcessBlock();
 		bufferIndex = 0;
-		// Reset outputs and lights because they might hold old values
-		for (int i = 0; i < NUM_ROWS; i++)
-			outputs[OUT_OUTPUTS + i].setVoltage(0.f);
-		for (int i = 0; i < NUM_ROWS; i++)
-			for (int c = 0; c < 3; c++)
-				lights[LIGHT_LIGHTS + i * 3 + c].setBrightness(0.f);
-		for (int i = 0; i < NUM_ROWS; i++)
-			for (int c = 0; c < 3; c++)
-				lights[SWITCH_LIGHTS + i * 3 + c].setBrightness(0.f);
+		// Reset block
+		*block = ProcessBlock();
 
 		if (script == "")
 			return;
@@ -322,9 +329,8 @@ struct Prototype : Module {
 				std::string script = std::string(json_string_value(scriptJ), json_string_length(scriptJ));
 				if (script != "") {
 					// Request security warning message
-					if (!securityAccepted) {
-						securityRequested = true;
-					}
+					securityAccepted = false;
+					securityRequested = true;
 					securityScript = script;
 				}
 			}
@@ -365,10 +371,13 @@ struct Prototype : Module {
 		if (newExt == "")
 			newPath += "." + ext;
 
-		std::ofstream f(newPath);
-		f << script;
-		// Set path directly
-		path = newPath;
+		// Write and close file
+		{
+			std::ofstream f(newPath);
+			f << script;
+		}
+		// Load path so that it reloads and is watched.
+		setPath(newPath);
 	}
 };
 
