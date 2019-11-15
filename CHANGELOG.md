@@ -1,4 +1,4 @@
-### 1.2.0 (in development)
+### 1.2.0 (2019-11-15)
 - Add Lua script engine.
 - Add security warning when loading script from patch or module preset.
 
