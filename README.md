@@ -113,13 +113,12 @@ sudo pacman -S premake
 
 ## Adding a script engine
 
-- Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in the `Makefile`.
-- Create a `MyEngine.cpp` file (for example) in `src/` with a `ScriptEngine` subclass defining the virtual methods, possibly using `src/DuktapeEngine.cpp` as an example.
-- Add your engine to the "List of ScriptEngines" in `src/ScriptEngine.cpp`.
+- Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in `Makefile`.
+- Create a `MyEngine.cpp` file (for example) in `src/` with a `ScriptEngine` subclass defining the virtual methods, using `src/DuktapeEngine.cpp` as an example.
 - Build and test the plugin.
 - Add a few example scripts and tests to `examples/`. These will be included in the plugin package for the user.
 - Add your name to the Contributors list below.
-- Send a pull request. Once merged, you will be added as a repo maintainer. Be sure to "watch" this repo to be notified of bugs in your engine.
+- Send a pull request. Once merged, you will be added as a repo maintainer. Be sure to "watch" this repo to be notified of bug reports and feature requests for your engine.
 
 ## Contributors
 
