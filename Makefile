@@ -17,6 +17,7 @@ DUKTAPE ?= 0
 QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
+SUPERCOLLIDER ?= 1
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -71,6 +72,26 @@ $(luajit):
 	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
 	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
 	cd dep/LuaJIT-2.0.5 && $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
+endif
+
+# SuperCollider
+ifeq ($(SUPERCOLLIDER), 1)
+SOURCES += src/SuperColliderEngine.cpp
+FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface
+supercollider := dep/supercollider/build/lang/libsclang.a
+OBJECTS += $(supercollider)
+DEPS += $(supercollider)
+SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=OFF -DSC_EL=OFF -DSC_VIM=OFF -DSC_ED=OFF -DSC_IDE=OFF -DSC_ABLETON_LINK=OFF -DSC_QT=OFF -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=OFF -DBUILD_TESTING=OFF
+SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio_sc_org external_libraries/yaml-cpp
+SUPERCOLLIDER_BRANCH := topic/vcv-prototype-support
+# TODO need some better way of getting link library names!
+LDFLAGS += dep/supercollider/build/lang/../external_libraries/libtlsf.a /usr/lib/libpthread.dylib dep/supercollider/build/lang/../external_libraries/hidapi/mac/libhidapi.a dep/supercollider/build/lang/../external_libraries/hidapi/hidapi_parser/libhidapi_parser.a dep/supercollider/build/lang/../external_libraries/libboost_thread_lib.a dep/supercollider/build/lang/../external_libraries/libboost_system_lib.a dep/supercollider/build/lang/../external_libraries/libboost_regex_lib.a dep/supercollider/build/lang/../external_libraries/libboost_filesystem_lib.a /usr/local/opt/readline/lib/libreadline.dylib -framework Carbon -framework CoreAudio -framework CoreMIDI -framework CoreServices -framework IOKit -framework CoreFoundation /usr/local/opt/libsndfile/lib/libsndfile.dylib dep/supercollider/build/lang/../external_libraries/libyaml.a
+$(supercollider):
+	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 5
+	cd dep/supercollider && git submodule update --init -- $(SUPERCOLLIDER_SUBMODULES)
+	cd dep/supercollider && mkdir build && cd build
+	cd dep/supercollider/build && cmake .. -G "Unix Makefiles" $(SUPERCOLLIDER_CMAKE_FLAGS)
+	cd dep/supercollider/build && $(MAKE) libsclang
 endif
 
 # Python
