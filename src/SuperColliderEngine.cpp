@@ -161,6 +161,20 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	// END TIMING
 }
 
+int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
+	interpret(text);
+
+	auto* resultSlot = &scGlobals()->result;
+	if (IsInt(resultSlot)) {
+		auto intResult = slotRawInt(resultSlot);
+		printf("%s: %d\n", text, intResult);
+		return intResult;
+	}
+
+	FAIL(std::string("Result of '") + text + "' was not int as expected");
+	return -1;
+}
+
 __attribute__((constructor(1000)))
 static void constructor() {
 	addScriptEngine<SuperColliderEngine>("sc");
