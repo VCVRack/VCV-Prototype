@@ -174,12 +174,17 @@ int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
 	auto* resultSlot = &scGlobals()->result;
 	if (IsInt(resultSlot)) {
 		auto intResult = slotRawInt(resultSlot);
-		printf("%s: %d\n", text, intResult);
-		return intResult;
+		if (intResult > 0) {
+			return intResult;
+		} else {
+			// TODO better formatting
+			FAIL(std::string("Result of '") + text "' should be > 0");
+			return -1;
+		}
+	} else {
+		FAIL(std::string("Result of '") + text + "' should be Integer");
+		return -1;
 	}
-
-	FAIL(std::string("Result of '") + text + "' was not int as expected");
-	return -1;
 }
 
 __attribute__((constructor(1000)))
