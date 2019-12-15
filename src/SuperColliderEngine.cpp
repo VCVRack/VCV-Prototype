@@ -90,11 +90,7 @@ public:
 
 private:
 	bool waitingOnClient() const noexcept { return !_clientRunning; }
-
-	// TODO
 	bool clientHasError() const noexcept { return !_client->isOk(); }
-
-	// TODO handle failure conditions
 	void finishClientLoading() noexcept { _clientRunning = true; }
 
 	std::unique_ptr<SC_VcvPrototypeClient> _client;
