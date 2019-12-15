@@ -35,7 +35,7 @@ public:
 	~SC_VcvPrototypeClient();
 
 	// These will invoke the interpreter
-	void interpret(const std::string& text) noexcept;
+	void interpret(const char *) noexcept;
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
 	int getFrameDivider() noexcept { return 1; } // getResultAsInt("^~vcv_frameDivider"); }
 	int getBufferSize() noexcept { return 256; } // getResultAsInt("^~vcv_bufferSize"); }
@@ -64,7 +64,7 @@ public:
 		if (!_clientThread.joinable()) {
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
-				_client->interpret(script);
+				_client->interpret(script.c_str());
 				setFrameDivider(_client->getFrameDivider());
 				setBufferSize(_client->getBufferSize());
 				finishClientLoading();
@@ -130,8 +130,8 @@ SC_VcvPrototypeClient::~SC_VcvPrototypeClient() {
 	shutdownRuntime();
 }
 
-void SC_VcvPrototypeClient::interpret(const std::string& text) noexcept {
-	setCmdLine(text.c_str());
+void SC_VcvPrototypeClient::interpret(const char* text) noexcept {
+	setCmdLine(text);
 	interpretCmdLine();
 }
 
@@ -149,7 +149,8 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 
 	// TIMING TODO test code
 	auto start = std::chrono::high_resolution_clock::now();
-	interpret(builder.str());
+	auto&& string = builder.str();
+	interpret(string.c_str());
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
 	if (gmax < ticks)
