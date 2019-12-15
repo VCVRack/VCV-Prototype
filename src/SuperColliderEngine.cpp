@@ -37,8 +37,10 @@ public:
 	// These will invoke the interpreter
 	void interpret(const char *) noexcept;
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
-	int getFrameDivider() noexcept { return 1; } // getResultAsInt("^~vcv_frameDivider"); }
-	int getBufferSize() noexcept { return 256; } // getResultAsInt("^~vcv_bufferSize"); }
+	int getFrameDivider() noexcept { return getResultAsInt("^~vcv_frameDivider"); }
+	int getBufferSize() noexcept { return getResultAsInt("^~vcv_bufferSize"); }
+
+	bool isOk() const noexcept { return _ok; }
 
 	void postText(const char* str, size_t len) override;
 
@@ -52,6 +54,7 @@ private:
 	int getResultAsInt(const char* text) noexcept;
 
 	SuperColliderEngine* _engine;
+	bool _ok = true;
 };
 
 class SuperColliderEngine final : public ScriptEngine {
@@ -78,12 +81,18 @@ public:
 		if (waitingOnClient())
 			return 0;
 
+		if (clientHasError())
+			return 1;
+
 		_client->evaluateProcessBlock(getProcessBlock());
 		return 0;
 	}
 
 private:
 	bool waitingOnClient() const noexcept { return !_clientRunning; }
+
+	// TODO
+	bool clientHasError() const noexcept { return !_client->isOk(); }
 
 	// TODO handle failure conditions
 	void finishClientLoading() noexcept { _clientRunning = true; }
@@ -94,7 +103,7 @@ private:
 };
 
 // TODO
-#define FAIL(_msg_) _engine->display(_msg_)
+#define FAIL(_msg_) do { _engine->display(_msg_); _ok = false; } while (0)
 
 SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 	: SC_LanguageClient("SC VCV-Prototype client")
@@ -136,7 +145,9 @@ void SC_VcvPrototypeClient::interpret(const char* text) noexcept {
 }
 
 void SC_VcvPrototypeClient::postText(const char* str, size_t len) {
-	_engine->display(std::string(str, len));
+	// Ensure the last message logged (presumably an error) stays onscreen.
+	if (_ok)
+		_engine->display(std::string(str, len));
 }
 
 // TODO test code
