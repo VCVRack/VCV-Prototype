@@ -50,6 +50,7 @@ public:
 	void flush() override {}
 
 private:
+	std::string buildScProcessBlockString(const ProcessBlock* block) const noexcept;
 	int getResultAsInt(const char* text) noexcept;
 
 	SuperColliderEngine* _engine;
@@ -67,6 +68,7 @@ public:
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
 				_client->interpret(script.c_str());
+				// _client->setNumRows(); TODO
 				setFrameDivider(_client->getFrameDivider());
 				setBufferSize(_client->getBufferSize());
 				finishClientLoading();
@@ -145,17 +147,80 @@ void SC_VcvPrototypeClient::postText(const char* str, size_t len) {
 		_engine->display(std::string(str, len));
 }
 
+std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
+	std::ostringstream builder;
+
+	// TODO so expensive
+	builder << "^~vcv_process.value(VcvPrototypeProcessBlock.new("
+		<< block->sampleRate << ','
+		<< block->sampleTime << ','
+		<< block->bufferSize << ',';
+
+	auto&& appendInOutArray = [&builder](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
+		builder << '[';
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			builder << "FloatArray[";
+			for (int j = 0; j < bufferSize; ++j) {
+				builder << data[i][j];
+				if (j != bufferSize - 1)
+					builder << ',';
+			}
+			builder << ']';
+		if (i != NUM_ROWS - 1)
+			builder << ',';
+		}
+		builder << ']';
+	};
+
+	appendInOutArray(block->bufferSize, block->inputs);
+	builder << ',';
+	appendInOutArray(block->bufferSize, block->outputs);
+	builder << ',';
+
+	// knobs
+	builder << "FloatArray[";
+	for (int i = 0; i < NUM_ROWS; ++i) {
+		builder << block->knobs[i];
+		if (i != NUM_ROWS - 1)
+			builder << ',';
+	}
+	builder << "],";
+
+	// switches
+	builder << '[' << std::boolalpha;
+	for (int i = 0; i < NUM_ROWS; ++i) {
+		builder << block->switches[i];
+		if (i != NUM_ROWS - 1)
+			builder << ',';
+	}
+	builder << "],";
+
+	// lights, switchlights
+	auto&& appendLightsArray = [&builder](const float (&array)[NUM_ROWS][3]) {
+		builder << '[';
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			builder << "FloatArray[" << array[i][0] << ',' << array[i][1] << ',' << array[i][2] << ']';
+			if (i != NUM_ROWS - 1)
+				builder << ',';
+		}
+		builder << ']';
+	};
+
+	appendLightsArray(block->lights);
+	builder << ',';
+	appendLightsArray(block->switchLights);
+
+	builder << "));\n";
+	return builder.str();
+}
+
 // TODO test code
 static long long int gmax = 0;
 
 void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
-	std::ostringstream builder;
-
-	builder << "~vcv_process.value(" << block->knobs[0] << ");\n";
-
-	// TIMING TODO test code
+	// TODO timing test code
 	auto start = std::chrono::high_resolution_clock::now();
-	auto&& string = builder.str(); // TODO avoid copy! better formatting!
+	auto&& string = buildScProcessBlockString(block);
 	interpret(string.c_str());
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
@@ -164,7 +229,6 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 		gmax = ticks;
 		printf("MAX TIME %lld\n", ticks);
 	}
-	// END TIMING
 }
 
 int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
