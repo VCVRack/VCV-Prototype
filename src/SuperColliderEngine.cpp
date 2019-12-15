@@ -50,7 +50,6 @@ public:
 	void flush() override {}
 
 private:
-	// TODO
 	int getResultAsInt(const char* text) noexcept;
 
 	SuperColliderEngine* _engine;
