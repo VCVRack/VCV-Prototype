@@ -177,7 +177,7 @@ int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
 			return intResult;
 		} else {
 			// TODO better formatting
-			FAIL(std::string("Result of '") + text "' should be > 0");
+			FAIL(std::string("Result of '") + text + "' should be > 0");
 			return -1;
 		}
 	} else {
