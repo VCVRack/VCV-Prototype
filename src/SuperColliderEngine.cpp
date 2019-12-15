@@ -85,7 +85,7 @@ public:
 			return 1;
 
 		_client->evaluateProcessBlock(getProcessBlock());
-		return 0;
+		return clientHasError() ? 1 : 0;
 	}
 
 private:
