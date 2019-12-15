@@ -156,7 +156,7 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 
 	// TIMING TODO test code
 	auto start = std::chrono::high_resolution_clock::now();
-	auto&& string = builder.str();
+	auto&& string = builder.str(); // TODO avoid copy! better formatting!
 	interpret(string.c_str());
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
