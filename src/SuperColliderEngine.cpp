@@ -35,7 +35,7 @@ public:
 	~SC_VcvPrototypeClient();
 
 	// These will invoke the interpreter
-	void interpret(const char *) noexcept;
+	void interpret(const char * text) noexcept;
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
 	int getFrameDivider() noexcept { return getResultAsInt("^~vcv_frameDivider"); }
 	int getBufferSize() noexcept { return getResultAsInt("^~vcv_bufferSize"); }
