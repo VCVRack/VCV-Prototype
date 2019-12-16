@@ -4,6 +4,7 @@
 #include "LangSource/SC_LanguageConfig.hpp"
 #include "LangSource/SCBase.h"
 #include "LangSource/VMGlobals.h"
+#include "LangSource/PyrObject.h"
 
 #include <thread>
 #include <atomic>
@@ -52,6 +53,10 @@ public:
 private:
 	std::string buildScProcessBlockString(const ProcessBlock* block) const noexcept;
 	int getResultAsInt(const char* text) noexcept;
+	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
+
+	// converts top of stack back to ProcessBlock data
+	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
 	SuperColliderEngine* _engine;
 	bool _ok = true;
@@ -151,6 +156,7 @@ std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 	std::ostringstream builder;
 
 	// TODO so expensive
+	builder << std::fixed; // to ensure floats aren't actually treated as Integers
 	builder << "^~vcv_process.value(VcvPrototypeProcessBlock.new("
 		<< block->sampleRate << ','
 		<< block->sampleTime << ','
@@ -214,6 +220,92 @@ std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 	return builder.str();
 }
 
+bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept {
+	// TODO
+	return true;
+}
+
+void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexcept {
+	auto* resultSlot = &scGlobals()->result;
+	if (!isVcvPrototypeProcessBlock(resultSlot)) {
+		FAIL("Result of ~vcv_process must be an instance of VcvPrototypeProcessBlock");
+		return;
+	}
+
+	constexpr unsigned outputsSlotIndex = 4;
+	constexpr unsigned knobsSlotIndex = 5;
+	constexpr unsigned lightsSlotIndex = 7;
+	constexpr unsigned switchLightsSlotIndex = 8;
+
+	PyrObject* object = slotRawObject(resultSlot);
+
+	{
+		// OUTPUTS
+		PyrSlot* outputsSlot = &object->slots[outputsSlotIndex];
+		// TODO check is array
+		// TODO check size
+		PyrObject* outputsObj = slotRawObject(outputsSlot);
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			PyrSlot* floatArraySlot = &outputsObj->slots[i];
+			// TODO check is floatarray
+			// TODO check size
+			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
+			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
+			for (int j = 0; j < block->bufferSize; ++j) {
+				block->outputs[i][j] = floatArray->f[j];
+			}
+		}
+	}
+
+	{
+		// KNOBS
+		PyrSlot* knobsSlot = &object->slots[knobsSlotIndex];
+		// TODO check is floatarray
+		// TODO check size
+		PyrObject* knobsObj = slotRawObject(knobsSlot);
+		PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(knobsObj);
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			block->knobs[i] = floatArray->f[i];
+		}
+	}
+
+	{
+		// LIGHTS
+		PyrSlot* lightsSlot = &object->slots[lightsSlotIndex];
+		// TODO check is array
+		// TODO check size
+		PyrObject* lightsObj = slotRawObject(lightsSlot);
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			PyrSlot* floatArraySlot = &lightsObj->slots[i];
+			// TODO check is floatarray
+			// TODO check size
+			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
+			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
+			block->lights[i][0] = floatArray->f[0];
+			block->lights[i][1] = floatArray->f[1];
+			block->lights[i][2] = floatArray->f[2];
+		}
+	}
+
+	{
+		// SWITCH LIGHTS
+		PyrSlot* switchLightsSlot = &object->slots[switchLightsSlotIndex];
+		// TODO check is array
+		// TODO check size
+		PyrObject* switchLightsObj = slotRawObject(switchLightsSlot);
+		for (int i = 0; i < NUM_ROWS; ++i) {
+			PyrSlot* floatArraySlot = &switchLightsObj->slots[i];
+			// TODO check is floatarray
+			// TODO check size
+			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
+			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
+			block->switchLights[i][0] = floatArray->f[0];
+			block->switchLights[i][1] = floatArray->f[1];
+			block->switchLights[i][2] = floatArray->f[2];
+		}
+	}
+}
+
 // TODO test code
 static long long int gmax = 0;
 
@@ -222,6 +314,7 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	auto start = std::chrono::high_resolution_clock::now();
 	auto&& string = buildScProcessBlockString(block);
 	interpret(string.c_str());
+	readScProcessBlockResult(block);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
 	if (gmax < ticks)
