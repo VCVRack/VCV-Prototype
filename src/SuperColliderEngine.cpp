@@ -61,11 +61,12 @@ private:
 	int getResultAsInt(const char* text) noexcept;
 	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
 
+	void fail(const std::string& msg) noexcept;
+
 	// converts top of stack back to ProcessBlock data
 	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
-	void fail(const std::string& msg) noexcept;
-
+	// helpers for copying SC info back into process block's arrays
 	template <typename Array>
 	bool copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& array, int size) noexcept;
 	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
@@ -165,11 +166,13 @@ std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 
 	// TODO so expensive
 	builder << std::fixed; // to ensure floats aren't actually treated as Integers
-	builder << "^~vcv_process.value(VcvPrototypeProcessBlock.new("
+	builder << "^~vcv_process.(VcvPrototypeProcessBlock.new("
 		<< block->sampleRate << ','
 		<< block->sampleTime << ','
 		<< block->bufferSize << ',';
 
+	// after this, all floats are printed in float arrays, so we don't need to worry about misinterpreting
+	builder << std::defaultfloat;
 	auto&& appendInOutArray = [&builder](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
 		builder << '[';
 		for (int i = 0; i < NUM_ROWS; ++i) {
