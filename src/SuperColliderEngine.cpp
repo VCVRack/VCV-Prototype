@@ -232,6 +232,7 @@ void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexce
 		return;
 	}
 
+	// See .sc object definition
 	constexpr unsigned outputsSlotIndex = 4;
 	constexpr unsigned knobsSlotIndex = 5;
 	constexpr unsigned lightsSlotIndex = 7;
