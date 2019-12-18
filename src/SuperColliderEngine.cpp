@@ -5,6 +5,7 @@
 #include "LangSource/SCBase.h"
 #include "LangSource/VMGlobals.h"
 #include "LangSource/PyrObject.h"
+#include "LangSource/PyrKernel.h"
 
 #include <thread>
 #include <atomic>
@@ -62,10 +63,11 @@ private:
 	// converts top of stack back to ProcessBlock data
 	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
-	void fail(const std::string& msg) noexcept {
-		_engine->display(msg);
-		_ok = false;
-	}
+	void fail(const std::string& msg) noexcept;
+
+	template <typename Array>
+	bool copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& array, int size) noexcept;
+	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
 
 	SuperColliderEngine* _engine;
 	bool _ok = true;
@@ -226,7 +228,56 @@ std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 }
 
 bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept {
-	// TODO
+	if (NotObj(slot))
+		return false;
+
+	auto* klass = slotRawObject(slot)->classptr;
+	auto* klassNameSymbol = slotRawSymbol(&klass->name);
+	return klassNameSymbol == getsym("VcvPrototypeProcessBlock");
+}
+
+template <typename Array>
+bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& outArray, int size) noexcept
+{
+	// OUTPUTS
+	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_array)) {
+		fail(std::string(context) + " must be a Array");
+		return false;
+	}
+	auto* inObj = slotRawObject(&inSlot);
+	if (inObj->size != NUM_ROWS) {
+		fail(std::string(context) + " must be of size " + std::to_string(NUM_ROWS));
+		return false;
+	}
+
+	const auto subContext = std::string(context) + " subarray";
+	for (int i = 0; i < NUM_ROWS; ++i) {
+		if (!copyFloatArray(inObj->slots[i], subContext.c_str(), outArray[i], size)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept
+{
+	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_floatarray)) {
+		fail(std::string(context) + " must be a FloatArray");
+		return false;
+	}
+	auto* floatArrayObj = slotRawObject(&inSlot);
+	if (floatArrayObj->size != size) {
+		fail(std::string(context) + " must be of size " + std::to_string(size));
+		return false;
+	}
+
+	auto* floatArray = reinterpret_cast<const PyrFloatArray*>(floatArrayObj);
+	auto* rawArray = static_cast<const float*>(floatArray->f);
+	for (int i = 0; i < size; ++i) {
+		outArray[i] = rawArray[i];
+	}
+
 	return true;
 }
 
@@ -244,72 +295,21 @@ void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexce
 	constexpr unsigned switchLightsSlotIndex = 8;
 
 	PyrObject* object = slotRawObject(resultSlot);
+	auto* rawSlots = static_cast<PyrSlot*>(object->slots);
 
-	{
-		// OUTPUTS
-		PyrSlot* outputsSlot = &object->slots[outputsSlotIndex];
-		// TODO check is array
-		// TODO check size
-		PyrObject* outputsObj = slotRawObject(outputsSlot);
-		for (int i = 0; i < NUM_ROWS; ++i) {
-			PyrSlot* floatArraySlot = &outputsObj->slots[i];
-			// TODO check is floatarray
-			// TODO check size
-			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
-			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
-			for (int j = 0; j < block->bufferSize; ++j) {
-				block->outputs[i][j] = floatArray->f[j];
-			}
-		}
-	}
+	if (!copyArrayOfFloatArrays(rawSlots[outputsSlotIndex], "outputs", block->outputs, block->bufferSize))
+		return;
+	if (!copyArrayOfFloatArrays(rawSlots[lightsSlotIndex], "lights", block->lights, 3))
+		return;
+	if (!copyArrayOfFloatArrays(rawSlots[switchLightsSlotIndex], "switchLights", block->switchLights, 3))
+		return;
+	if (!copyFloatArray(rawSlots[knobsSlotIndex], "knobs", block->knobs, NUM_ROWS))
+		return;
+}
 
-	{
-		// KNOBS
-		PyrSlot* knobsSlot = &object->slots[knobsSlotIndex];
-		// TODO check is floatarray
-		// TODO check size
-		PyrObject* knobsObj = slotRawObject(knobsSlot);
-		PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(knobsObj);
-		for (int i = 0; i < NUM_ROWS; ++i) {
-			block->knobs[i] = floatArray->f[i];
-		}
-	}
-
-	{
-		// LIGHTS
-		PyrSlot* lightsSlot = &object->slots[lightsSlotIndex];
-		// TODO check is array
-		// TODO check size
-		PyrObject* lightsObj = slotRawObject(lightsSlot);
-		for (int i = 0; i < NUM_ROWS; ++i) {
-			PyrSlot* floatArraySlot = &lightsObj->slots[i];
-			// TODO check is floatarray
-			// TODO check size
-			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
-			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
-			block->lights[i][0] = floatArray->f[0];
-			block->lights[i][1] = floatArray->f[1];
-			block->lights[i][2] = floatArray->f[2];
-		}
-	}
-
-	{
-		// SWITCH LIGHTS
-		PyrSlot* switchLightsSlot = &object->slots[switchLightsSlotIndex];
-		// TODO check is array
-		// TODO check size
-		PyrObject* switchLightsObj = slotRawObject(switchLightsSlot);
-		for (int i = 0; i < NUM_ROWS; ++i) {
-			PyrSlot* floatArraySlot = &switchLightsObj->slots[i];
-			// TODO check is floatarray
-			// TODO check size
-			PyrObject* floatArrayObj = slotRawObject(floatArraySlot);
-			PyrFloatArray* floatArray = reinterpret_cast<PyrFloatArray*>(floatArrayObj);
-			block->switchLights[i][0] = floatArray->f[0];
-			block->switchLights[i][1] = floatArray->f[1];
-			block->switchLights[i][2] = floatArray->f[2];
-		}
-	}
+void SC_VcvPrototypeClient::fail(const std::string& msg) noexcept {
+	_engine->display(msg);
+	_ok = false;
 }
 
 // TODO test code
