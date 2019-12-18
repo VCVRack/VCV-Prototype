@@ -38,6 +38,10 @@ public:
 	// These will invoke the interpreter
 	void interpret(const char * text) noexcept;
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
+	void setNumRows() noexcept {
+		std::string&& command = "VcvPrototypeProcessBlock.numRows = " + std::to_string(NUM_ROWS);
+		interpret(command.c_str());
+	}
 	int getFrameDivider() noexcept { return getResultAsInt("^~vcv_frameDivider"); }
 	int getBufferSize() noexcept { return getResultAsInt("^~vcv_bufferSize"); }
 
@@ -73,7 +77,7 @@ public:
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
 				_client->interpret(script.c_str());
-				// _client->setNumRows(); TODO
+				_client->setNumRows();
 				setFrameDivider(_client->getFrameDivider());
 				setBufferSize(_client->getBufferSize());
 				finishClientLoading();
