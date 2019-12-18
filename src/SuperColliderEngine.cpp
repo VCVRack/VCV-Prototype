@@ -161,7 +161,15 @@ void SC_VcvPrototypeClient::postText(const char* str, size_t len) {
 		_engine->display(std::string(str, len));
 }
 
+constexpr unsigned overhead = 512;
+constexpr unsigned floatSize = 10;
+constexpr unsigned insOutsSize = MAX_BUFFER_SIZE * NUM_ROWS * 2 * floatSize;
+constexpr unsigned otherArraysSize = floatSize * NUM_ROWS * 8;
+constexpr unsigned bufferSize = insOutsSize + otherArraysSize + overhead;
+static char scratchBuf[bufferSize];
+
 std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
+
 	std::ostringstream builder;
 
 	// TODO so expensive
