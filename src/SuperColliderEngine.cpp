@@ -81,8 +81,8 @@ public:
 		if (!_clientThread.joinable()) {
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
-				_client->interpret(script.c_str());
 				_client->setNumRows();
+				_client->interpret(script.c_str());
 				setFrameDivider(_client->getFrameDivider());
 				setBufferSize(_client->getBufferSize());
 				finishClientLoading();
