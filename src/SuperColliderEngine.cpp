@@ -62,6 +62,11 @@ private:
 	// converts top of stack back to ProcessBlock data
 	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
+	void fail(const std::string& msg) noexcept {
+		_engine->display(msg);
+		_ok = false;
+	}
+
 	SuperColliderEngine* _engine;
 	bool _ok = true;
 };
@@ -108,9 +113,6 @@ private:
 	std::atomic_bool _clientRunning{false}; // set to true when client is ready to process data
 };
 
-// TODO
-#define FAIL(_msg_) do { _engine->display(_msg_); _ok = false; } while (0)
-
 SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 	: SC_LanguageClient("SC VCV-Prototype client")
 	, _engine(engine)
@@ -121,13 +123,13 @@ SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 	Path sc_yaml_path = rack::asset::plugin(pluginInstance, "dep/supercollider/sclang_vcv_config.yml");
 
 	if (!SC_LanguageConfig::defaultLibraryConfig(/* isStandalone */ true))
-		FAIL("Failed setting default library config");
+		fail("Failed setting default library config");
 	if (!gLanguageConfig->addIncludedDirectory(sc_lib_root))
-		FAIL("Failed to add main include directory");
+		fail("Failed to add main include directory");
 	if (!gLanguageConfig->addIncludedDirectory(sc_ext_root))
-		FAIL("Failed to add extensions include directory");
+		fail("Failed to add extensions include directory");
 	if (!SC_LanguageConfig::writeLibraryConfigYAML(sc_yaml_path))
-		FAIL("Failed to write library config YAML file");
+		fail("Failed to write library config YAML file");
 
 	SC_LanguageConfig::setConfigPath(sc_yaml_path);
 
@@ -135,9 +137,8 @@ SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 
 	initRuntime();
 	compileLibrary(/* isStandalone */ true);
-	// TODO better logging here?
 	if (!isLibraryCompiled())
-		FAIL("Error while compiling class library");
+		fail("Error while compiling class library");
 }
 
 SC_VcvPrototypeClient::~SC_VcvPrototypeClient() {
@@ -232,7 +233,7 @@ bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) cons
 void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexcept {
 	auto* resultSlot = &scGlobals()->result;
 	if (!isVcvPrototypeProcessBlock(resultSlot)) {
-		FAIL("Result of ~vcv_process must be an instance of VcvPrototypeProcessBlock");
+		fail("Result of ~vcv_process must be an instance of VcvPrototypeProcessBlock");
 		return;
 	}
 
@@ -338,12 +339,11 @@ int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
 		if (intResult > 0) {
 			return intResult;
 		} else {
-			// TODO better formatting
-			FAIL(std::string("Result of '") + text + "' should be > 0");
+			fail(std::string("Result of '") + text + "' should be > 0");
 			return -1;
 		}
 	} else {
-		FAIL(std::string("Result of '") + text + "' should be Integer");
+		fail(std::string("Result of '") + text + "' should be Integer");
 		return -1;
 	}
 }
