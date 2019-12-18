@@ -17,13 +17,15 @@ a = 0;
 ~nSamp = 100;
 ~phases = ~nSamp.collect { |i| sin(i / ~nSamp * 2pi); };
 ~vcv_process = {|block|
+	VcvPrototypeProcessBlock.numRows.do { |j|
 	block.bufferSize.do { |i|
-		block.outputs[0][i] = ~phases[~i] * block.knobs[0];
-		~i = ~i + block.knobs[1];
+		block.outputs[j][i] = ~phases[~i] * block.knobs[j];
+		~i = ~i + block.knobs[j];
 		~i = ~i mod: ~nSamp;
 
-		block.outputs[1][i] = block.inputs[0][i] * block.outputs[0][i];
-		block.outputs[1][i] = block.outputs[1][i].squared;
+		block.outputs[j][i] = block.inputs[j][i] * block.outputs[0][i];
+		block.outputs[j][i] = block.outputs[j][i].squared;
+	};
 	};
 
 	block.switchLights[3][0] = 1.0.rand();
