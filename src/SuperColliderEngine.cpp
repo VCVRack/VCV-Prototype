@@ -9,6 +9,7 @@
 
 #include <thread>
 #include <atomic>
+#include <numeric>
 #include <unistd.h> // getcwd
 
 // SuperCollider script engine for VCV-Prototype
@@ -314,6 +315,9 @@ void SC_VcvPrototypeClient::fail(const std::string& msg) noexcept {
 
 // TODO test code
 static long long int gmax = 0;
+static constexpr unsigned int nTimes = 1024;
+static long long int times[nTimes] = {};
+static unsigned int timesIndex = 0;
 
 void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	// TODO timing test code
@@ -323,10 +327,18 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	readScProcessBlockResult(block);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
+
+	times[timesIndex] = ticks;
+	timesIndex++;
+	timesIndex %= nTimes;
 	if (gmax < ticks)
 	{
 		gmax = ticks;
 		printf("MAX TIME %lld\n", ticks);
+	}
+	if (timesIndex == 0)
+	{
+		printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
 	}
 }
 
