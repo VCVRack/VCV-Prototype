@@ -313,18 +313,21 @@ void SC_VcvPrototypeClient::fail(const std::string& msg) noexcept {
 	_ok = false;
 }
 
-// TODO test code
+#ifdef SC_VCV_ENGINE_TIMING
 static long long int gmax = 0;
 static constexpr unsigned int nTimes = 1024;
 static long long int times[nTimes] = {};
 static unsigned int timesIndex = 0;
+#endif
 
 void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
-	// TODO timing test code
+#ifdef SC_VCV_ENGINE_TIMING
 	auto start = std::chrono::high_resolution_clock::now();
+#endif
 	auto* buf = buildScProcessBlockString(block);
 	interpret(buf);
 	readScProcessBlockResult(block);
+#ifdef SC_VCV_ENGINE_TIMING
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
 
@@ -340,6 +343,7 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	{
 		printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
 	}
+#endif
 }
 
 int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
