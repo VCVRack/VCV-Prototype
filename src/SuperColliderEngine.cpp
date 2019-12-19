@@ -331,11 +331,11 @@ void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	if (gmax < ticks)
 	{
 		gmax = ticks;
-		printf("MAX TIME %lld\n", ticks);
+		std::printf("MAX TIME %lld\n", ticks);
 	}
 	if (timesIndex == 0)
 	{
-		printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
+		std::printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
 	}
 #endif
 }
