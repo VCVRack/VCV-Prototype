@@ -79,11 +79,23 @@ private:
 
 class SuperColliderEngine final : public ScriptEngine {
 public:
-	~SuperColliderEngine() noexcept { _clientThread.join(); }
+	~SuperColliderEngine() noexcept {
+		// Only join if client was started in the first place.
+		if (_clientThread.joinable())
+			_clientThread.join();
+		engineRunning = false;
+	}
 
 	std::string getEngineName() override { return "SuperCollider"; }
 
 	int run(const std::string& path, const std::string& script) override {
+		if (engineRunning) {
+			display("Only one SuperCollider engine may run at once");
+			return 1;
+		}
+
+		engineRunning = true;
+
 		if (!_clientThread.joinable()) {
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
@@ -110,6 +122,9 @@ public:
 	}
 
 private:
+	// Used to limit the number of running SC instances to 1.
+	static bool engineRunning;
+
 	bool waitingOnClient() const noexcept { return !_clientRunning; }
 	bool clientHasError() const noexcept { return !_client->isOk(); }
 	void finishClientLoading() noexcept { _clientRunning = true; }
@@ -118,6 +133,8 @@ private:
 	std::thread _clientThread; // used only to start up client
 	std::atomic_bool _clientRunning{false}; // set to true when client is ready to process data
 };
+
+bool SuperColliderEngine::engineRunning = false;
 
 SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 	: SC_LanguageClient("SC VCV-Prototype client")
