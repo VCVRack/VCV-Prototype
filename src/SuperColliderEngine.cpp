@@ -289,14 +289,14 @@ void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexce
 		return;
 	}
 
+	PyrObject* object = slotRawObject(resultSlot);
+	auto* rawSlots = static_cast<PyrSlot*>(object->slots);
+
 	// See .sc object definition
 	constexpr unsigned outputsSlotIndex = 4;
 	constexpr unsigned knobsSlotIndex = 5;
 	constexpr unsigned lightsSlotIndex = 7;
 	constexpr unsigned switchLightsSlotIndex = 8;
-
-	PyrObject* object = slotRawObject(resultSlot);
-	auto* rawSlots = static_cast<PyrSlot*>(object->slots);
 
 	if (!copyArrayOfFloatArrays(rawSlots[outputsSlotIndex], "outputs", block->outputs, block->bufferSize))
 		return;
