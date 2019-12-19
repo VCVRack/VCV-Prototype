@@ -260,9 +260,8 @@ bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const 
 		return false;
 	}
 
-	const auto subContext = std::string(context) + " subarray";
 	for (int i = 0; i < NUM_ROWS; ++i) {
-		if (!copyFloatArray(inObj->slots[i], subContext.c_str(), outArray[i], size)) {
+		if (!copyFloatArray(inObj->slots[i], "subarray", outArray[i], size)) {
 			return false;
 		}
 	}
@@ -284,10 +283,7 @@ bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* co
 
 	auto* floatArray = reinterpret_cast<const PyrFloatArray*>(floatArrayObj);
 	auto* rawArray = static_cast<const float*>(floatArray->f);
-	for (int i = 0; i < size; ++i) {
-		outArray[i] = rawArray[i];
-	}
-
+	std::memcpy(outArray, rawArray, size * sizeof(float));
 	return true;
 }
 
