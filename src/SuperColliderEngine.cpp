@@ -57,7 +57,7 @@ public:
 	void flush() override {}
 
 private:
-	std::string buildScProcessBlockString(const ProcessBlock* block) const noexcept;
+	const char* buildScProcessBlockString(const ProcessBlock* block) const noexcept;
 	int getResultAsInt(const char* text) noexcept;
 	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
 
@@ -161,82 +161,80 @@ void SC_VcvPrototypeClient::postText(const char* str, size_t len) {
 		_engine->display(std::string(str, len));
 }
 
+// This should be well above what we ever need to represent a process block.
 constexpr unsigned overhead = 512;
 constexpr unsigned floatSize = 10;
 constexpr unsigned insOutsSize = MAX_BUFFER_SIZE * NUM_ROWS * 2 * floatSize;
 constexpr unsigned otherArraysSize = floatSize * NUM_ROWS * 8;
-constexpr unsigned bufferSize = insOutsSize + otherArraysSize + overhead;
-static char scratchBuf[bufferSize];
+constexpr unsigned bufferSize = overhead + insOutsSize + otherArraysSize;
 
-std::string SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
+// Don't write initial string every time
+#define PROCESS_BEGIN_STRING "^~vcv_process.(VcvPrototypeProcessBlock.new("
+static char processBlockStringScratchBuf[bufferSize] = PROCESS_BEGIN_STRING;
+constexpr unsigned processBeginStringOffset = sizeof(PROCESS_BEGIN_STRING);
+#undef PROCESS_BEGIN_STRING
 
-	std::ostringstream builder;
+template <typename... Ts>
+static void doAppend(char*& buf, int& size, const char* fmt, Ts... vals) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+	auto result = std::snprintf(buf, size, fmt, vals...);
+#pragma GCC diagnostic pop
+	buf += result;
+	size -= result;
+}
 
-	// TODO so expensive
-	builder << std::fixed; // to ensure floats aren't actually treated as Integers
-	builder << "^~vcv_process.(VcvPrototypeProcessBlock.new("
-		<< block->sampleRate << ','
-		<< block->sampleTime << ','
-		<< block->bufferSize << ',';
+const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
+	auto* buf = processBlockStringScratchBuf + processBeginStringOffset - 1;
+	int size = sizeof(processBlockStringScratchBuf) - processBeginStringOffset + 1;
 
-	// after this, all floats are printed in float arrays, so we don't need to worry about misinterpreting
-	builder << std::defaultfloat;
-	auto&& appendInOutArray = [&builder](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
-		builder << '[';
+	// Perhaps imprudently assuming snprintf never returns a negative code
+	doAppend(buf, size, "%.6f,%.6f,%d,", block->sampleRate, block->sampleTime, block->bufferSize);
+
+	auto&& appendInOutArray = [&buf, &size](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
+		doAppend(buf, size, "[");
 		for (int i = 0; i < NUM_ROWS; ++i) {
-			builder << "FloatArray[";
+			doAppend(buf, size, "FloatArray[");
 			for (int j = 0; j < bufferSize; ++j) {
-				builder << data[i][j];
-				if (j != bufferSize - 1)
-					builder << ',';
+				doAppend(buf, size, "%g%c", data[i][j], j == bufferSize - 1 ? ' ' : ',');
 			}
-			builder << ']';
-		if (i != NUM_ROWS - 1)
-			builder << ',';
+			doAppend(buf, size, "]%c", i == NUM_ROWS - 1 ? ' ' : ',');
 		}
-		builder << ']';
+		doAppend(buf, size, "],");
 	};
 
 	appendInOutArray(block->bufferSize, block->inputs);
-	builder << ',';
 	appendInOutArray(block->bufferSize, block->outputs);
-	builder << ',';
 
 	// knobs
-	builder << "FloatArray[";
-	for (int i = 0; i < NUM_ROWS; ++i) {
-		builder << block->knobs[i];
-		if (i != NUM_ROWS - 1)
-			builder << ',';
-	}
-	builder << "],";
+	doAppend(buf, size, "FloatArray[");
+	for (int i = 0; i < NUM_ROWS; ++i)
+		doAppend(buf, size, "%g%c", block->knobs[i], i == NUM_ROWS - 1 ? ' ' : ',');
 
 	// switches
-	builder << '[' << std::boolalpha;
-	for (int i = 0; i < NUM_ROWS; ++i) {
-		builder << block->switches[i];
-		if (i != NUM_ROWS - 1)
-			builder << ',';
-	}
-	builder << "],";
+	doAppend(buf, size, "],[");
+	for (int i = 0; i < NUM_ROWS; ++i)
+		doAppend(buf, size, "%s%c", block->switches[i] ? "true" : "false", i == NUM_ROWS - 1 ? ' ' : ',');
+	doAppend(buf, size, "]");
 
 	// lights, switchlights
-	auto&& appendLightsArray = [&builder](const float (&array)[NUM_ROWS][3]) {
-		builder << '[';
+	auto&& appendLightsArray = [&buf, &size](const float (&array)[NUM_ROWS][3]) {
+		doAppend(buf, size, ",[");
 		for (int i = 0; i < NUM_ROWS; ++i) {
-			builder << "FloatArray[" << array[i][0] << ',' << array[i][1] << ',' << array[i][2] << ']';
-			if (i != NUM_ROWS - 1)
-				builder << ',';
+			doAppend(buf, size, "FloatArray[%g,%g,%g]%c", array[i][0], array[i][1], array[i][2],
+				i == NUM_ROWS - 1 ? ' ' : ',');
 		}
-		builder << ']';
+		doAppend(buf, size, "]");
 	};
 
 	appendLightsArray(block->lights);
-	builder << ',';
 	appendLightsArray(block->switchLights);
 
-	builder << "));\n";
-	return builder.str();
+	doAppend(buf, size, "));");
+
+	// printf("%s\nWrote %lu, %u remaining", processBlockStringScratchBuf, buf - processBlockStringScratchBuf, size);
+
+	return processBlockStringScratchBuf;
 }
 
 bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept {
@@ -333,8 +331,8 @@ static unsigned int timesIndex = 0;
 void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
 	// TODO timing test code
 	auto start = std::chrono::high_resolution_clock::now();
-	auto&& string = buildScProcessBlockString(block);
-	interpret(string.c_str());
+	auto* buf = buildScProcessBlockString(block);
+	interpret(buf);
 	readScProcessBlockResult(block);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto ticks = (end - start).count();
