@@ -185,7 +185,7 @@ const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 	auto&& appendInOutArray = [&buf](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
 		buf += std::sprintf(buf, "[");
 		for (int i = 0; i < NUM_ROWS; ++i) {
-			buf += std::sprintf(buf, "FloatArray[");
+			buf += std::sprintf(buf, "Signal[");
 			for (int j = 0; j < bufferSize; ++j) {
 				buf += std::sprintf(buf, "%g%c", data[i][j], j == bufferSize - 1 ? ' ' : ',');
 			}
