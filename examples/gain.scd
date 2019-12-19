@@ -1,10 +1,11 @@
 // Simplest possible script using all variables, demonstrating buffering
-// by Brian Heim
+// by Andrew Belt
+// adapted for SC by Brian Heim
 
 ~vcv_frameDivider = 1;
 ~vcv_bufferSize = 32;
 
-~vcv_process = {|block|
+~vcv_process = { |block|
 	// Loop through each row
 	VcvPrototypeProcessBlock.numRows.do { |i|
 		// Get gain knob

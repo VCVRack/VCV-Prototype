@@ -1,6 +1,6 @@
 // Rainbow RGB LED example
-// by Brian Heim
-// adapted from example by Andrew Belt
+// by Andrew Belt
+// adapted for SC by Brian Heim
 
 // Call process() every 256 audio samples
 ~vcv_frameDivider = 256;
