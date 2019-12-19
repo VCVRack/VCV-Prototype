@@ -37,14 +37,25 @@ public:
 	~SC_VcvPrototypeClient();
 
 	// These will invoke the interpreter
-	void interpret(const char * text) noexcept;
+	void interpretScript(const std::string& script) noexcept
+	{
+		// Insert our own environment variable in the script so we can check
+		// later (in testCompile()) whether it compiled all right.
+		auto modifiedScript = std::string(compileTestVariableName) + "=1;" + script;
+		interpret(modifiedScript.c_str());
+		testCompile();
+	}
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
 	void setNumRows() noexcept {
 		std::string&& command = "VcvPrototypeProcessBlock.numRows = " + std::to_string(NUM_ROWS);
 		interpret(command.c_str());
 	}
-	int getFrameDivider() noexcept { return getInterpretResultAsInt("^~vcv_frameDivider"); }
-	int getBufferSize() noexcept { return getInterpretResultAsInt("^~vcv_bufferSize"); }
+	int getFrameDivider() noexcept {
+		return getEnvVarAsPositiveInt("~vcv_frameDivider", "~vcv_frameDivider should be an Integer");
+	}
+	int getBufferSize() noexcept {
+		return getEnvVarAsPositiveInt("~vcv_bufferSize", "~vcv_bufferSize should be an Integer");
+	}
 
 	bool isOk() const noexcept { return _ok; }
 
@@ -56,19 +67,25 @@ public:
 	void flush() override {}
 
 private:
+	static const char * compileTestVariableName;
+
+	void interpret(const char * text) noexcept;
+
+	void testCompile() noexcept { getEnvVarAsPositiveInt(compileTestVariableName, "Script failed to compile"); }
+
 	// Called on unrecoverable error, will stop the plugin
 	void fail(const std::string& msg) noexcept;
 
 	const char* buildScProcessBlockString(const ProcessBlock* block) const noexcept;
 
-	int getInterpretResultAsInt(const char* text) noexcept;
+	int getEnvVarAsPositiveInt(const char* envVarName, const char* errorMsg) noexcept;
 
 	// converts top of stack back to ProcessBlock data
 	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
 	// helpers for copying SC info back into process block's arrays
 	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
-	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
+	bool copyFloatArray(const PyrSlot& inSlot, const char* context, const char* extraContext, float* outArray, int size) noexcept;
 	template <typename Array>
 	bool copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& array, int size) noexcept;
 
@@ -76,6 +93,8 @@ private:
 	PyrSymbol* _vcvPrototypeProcessBlockSym;
 	bool _ok = true;
 };
+
+const char * SC_VcvPrototypeClient::compileTestVariableName = "~vcv_secretTestCompileSentinel";
 
 class SuperColliderEngine final : public ScriptEngine {
 public:
@@ -100,7 +119,7 @@ public:
 			_clientThread = std::thread([this, script]() {
 				_client.reset(new SC_VcvPrototypeClient(this));
 				_client->setNumRows();
-				_client->interpret(script.c_str());
+				_client->interpretScript(script);
 				setFrameDivider(_client->getFrameDivider());
 				setBufferSize(_client->getBufferSize());
 				finishClientLoading();
@@ -286,8 +305,9 @@ const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 	return buildPbStringScratchBuf;
 }
 
-int SC_VcvPrototypeClient::getInterpretResultAsInt(const char* text) noexcept {
-	interpret(text);
+int SC_VcvPrototypeClient::getEnvVarAsPositiveInt(const char* envVarName, const char* errorMsg) noexcept {
+	auto command = std::string("^") + envVarName;
+	interpret(command.c_str());
 
 	auto* resultSlot = &scGlobals()->result;
 	if (IsInt(resultSlot)) {
@@ -295,11 +315,11 @@ int SC_VcvPrototypeClient::getInterpretResultAsInt(const char* text) noexcept {
 		if (intResult > 0) {
 			return intResult;
 		} else {
-			fail(std::string("Result of '") + text + "' should be > 0");
+			fail(std::string(envVarName) + " should be > 0");
 			return -1;
 		}
 	} else {
-		fail(std::string("Result of '") + text + "' should be Integer");
+		fail(errorMsg);
 		return -1;
 	}
 }
@@ -327,7 +347,7 @@ void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexce
 		return;
 	if (!copyArrayOfFloatArrays(rawSlots[switchLightsSlotIndex], "switchLights", block->switchLights, 3))
 		return;
-	if (!copyFloatArray(rawSlots[knobsSlotIndex], "knobs", block->knobs, NUM_ROWS))
+	if (!copyFloatArray(rawSlots[knobsSlotIndex], "", "knobs", block->knobs, NUM_ROWS))
 		return;
 }
 
@@ -340,15 +360,17 @@ bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) cons
 	return klassNameSymbol == _vcvPrototypeProcessBlockSym;
 }
 
-bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept
+// It's somewhat bad design that we pass two const char*s here, but this avoids an allocation while also providing
+// good context for errors.
+bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* context, const char* extraContext, float* outArray, int size) noexcept
 {
 	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_floatarray)) {
-		fail(std::string(context) + " must be a FloatArray");
+		fail(std::string(context) + extraContext + " must be a FloatArray");
 		return false;
 	}
 	auto* floatArrayObj = slotRawObject(&inSlot);
 	if (floatArrayObj->size != size) {
-		fail(std::string(context) + " must be of size " + std::to_string(size));
+		fail(std::string(context) + extraContext + " must be of size " + std::to_string(size));
 		return false;
 	}
 
@@ -373,7 +395,7 @@ bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const 
 	}
 
 	for (int i = 0; i < NUM_ROWS; ++i) {
-		if (!copyFloatArray(inObj->slots[i], "subarray", outArray[i], size)) {
+		if (!copyFloatArray(inObj->slots[i], "subarray of ", context, outArray[i], size)) {
 			return false;
 		}
 	}
