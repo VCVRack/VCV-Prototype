@@ -17,14 +17,13 @@
 
 /* DESIGN
  *
- * This is currently a work in progress. The idea is that the user writes a script
- * that defines a couple environment variables:
+ * The idea is that the user writes a script that defines a couple environment variables:
  *
  * ~vcv_frameDivider: Integer
  * ~vcv_bufferSize: Integer
  * ~vcv_process: Function (VcvPrototypeProcessBlock -> VcvPrototypeProcessBlock)
  *
- * ~vcv_process is invoked once per process block. Ideally, users should not manipulate
+ * ~vcv_process is invoked once per process block. Users should not manipulate
  * the block object in any way other than by writing directly to the arrays in `outputs`,
  * `knobs`, `lights`, and `switchLights`.
  */
