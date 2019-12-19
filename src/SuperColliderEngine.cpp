@@ -43,8 +43,8 @@ public:
 		std::string&& command = "VcvPrototypeProcessBlock.numRows = " + std::to_string(NUM_ROWS);
 		interpret(command.c_str());
 	}
-	int getFrameDivider() noexcept { return getResultAsInt("^~vcv_frameDivider"); }
-	int getBufferSize() noexcept { return getResultAsInt("^~vcv_bufferSize"); }
+	int getFrameDivider() noexcept { return getInterpretResultAsInt("^~vcv_frameDivider"); }
+	int getBufferSize() noexcept { return getInterpretResultAsInt("^~vcv_bufferSize"); }
 
 	bool isOk() const noexcept { return _ok; }
 
@@ -56,19 +56,21 @@ public:
 	void flush() override {}
 
 private:
-	const char* buildScProcessBlockString(const ProcessBlock* block) const noexcept;
-	int getResultAsInt(const char* text) noexcept;
-	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
-
+	// Called on unrecoverable error, will stop the plugin
 	void fail(const std::string& msg) noexcept;
+
+	const char* buildScProcessBlockString(const ProcessBlock* block) const noexcept;
+
+	int getInterpretResultAsInt(const char* text) noexcept;
 
 	// converts top of stack back to ProcessBlock data
 	void readScProcessBlockResult(ProcessBlock* block) noexcept;
 
 	// helpers for copying SC info back into process block's arrays
+	bool isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept;
+	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
 	template <typename Array>
 	bool copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& array, int size) noexcept;
-	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
 
 	SuperColliderEngine* _engine;
 	PyrSymbol* _vcvPrototypeProcessBlockSym;
@@ -157,27 +159,68 @@ void SC_VcvPrototypeClient::interpret(const char* text) noexcept {
 	interpretCmdLine();
 }
 
+#ifdef SC_VCV_ENGINE_TIMING
+static long long int gmax = 0;
+static constexpr unsigned int nTimes = 1024;
+static long long int times[nTimes] = {};
+static unsigned int timesIndex = 0;
+#endif
+
+void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
+#ifdef SC_VCV_ENGINE_TIMING
+	auto start = std::chrono::high_resolution_clock::now();
+#endif
+	auto* buf = buildScProcessBlockString(block);
+	interpret(buf);
+	readScProcessBlockResult(block);
+#ifdef SC_VCV_ENGINE_TIMING
+	auto end = std::chrono::high_resolution_clock::now();
+	auto ticks = (end - start).count();
+
+	times[timesIndex] = ticks;
+	timesIndex++;
+	timesIndex %= nTimes;
+	if (gmax < ticks)
+	{
+		gmax = ticks;
+		std::printf("MAX TIME %lld\n", ticks);
+	}
+	if (timesIndex == 0)
+	{
+		std::printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
+	}
+#endif
+}
+
 void SC_VcvPrototypeClient::postText(const char* str, size_t len) {
 	// Ensure the last message logged (presumably an error) stays onscreen.
 	if (_ok)
 		_engine->display(std::string(str, len));
 }
 
+void SC_VcvPrototypeClient::fail(const std::string& msg) noexcept {
+	// Ensure the last messaged logged in a previous failure stays onscreen.
+	if (_ok)
+		_engine->display(msg);
+	_ok = false;
+}
+
 // This should be well above what we ever need to represent a process block.
-constexpr unsigned overhead = 512;
-constexpr unsigned floatSize = 10;
-constexpr unsigned insOutsSize = MAX_BUFFER_SIZE * NUM_ROWS * 2 * floatSize;
-constexpr unsigned otherArraysSize = floatSize * NUM_ROWS * 8;
-constexpr unsigned bufferSize = overhead + insOutsSize + otherArraysSize;
+// Currently comes out to around 500 KB.
+constexpr unsigned buildPbOverhead = 1024;
+constexpr unsigned buildPbFloatSize = 10;
+constexpr unsigned buildPbInsOutsSize = MAX_BUFFER_SIZE * NUM_ROWS * 2 * buildPbFloatSize;
+constexpr unsigned buildPbOtherArraysSize = buildPbFloatSize * NUM_ROWS * 8;
+constexpr unsigned buildPbBufferSize = buildPbOverhead + buildPbInsOutsSize + buildPbOtherArraysSize;
 
 // Don't write initial string every time
-#define PROCESS_BEGIN_STRING "^~vcv_process.(VcvPrototypeProcessBlock.new("
-static char processBlockStringScratchBuf[bufferSize] = PROCESS_BEGIN_STRING;
-constexpr unsigned processBeginStringOffset = sizeof(PROCESS_BEGIN_STRING);
-#undef PROCESS_BEGIN_STRING
+#define BUILD_PB_BEGIN_STRING "^~vcv_process.(VcvPrototypeProcessBlock.new("
+static char buildPbStringScratchBuf[buildPbBufferSize] = BUILD_PB_BEGIN_STRING;
+constexpr unsigned buildPbBeginStringOffset = sizeof(BUILD_PB_BEGIN_STRING);
+#undef BUILD_PB_BEGIN_STRING
 
 const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
-	auto* buf = processBlockStringScratchBuf + processBeginStringOffset - 1;
+	auto* buf = buildPbStringScratchBuf + buildPbBeginStringOffset - 1;
 
 	// Perhaps imprudently assuming snprintf never returns a negative code
 	buf += std::sprintf(buf, "%.6f,%.6f,%d,", block->sampleRate, block->sampleTime, block->bufferSize);
@@ -223,58 +266,27 @@ const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock*
 
 	buf += std::sprintf(buf, "));");
 
-	return processBlockStringScratchBuf;
+	return buildPbStringScratchBuf;
 }
 
-bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept {
-	if (NotObj(slot))
-		return false;
+int SC_VcvPrototypeClient::getInterpretResultAsInt(const char* text) noexcept {
+	interpret(text);
 
-	auto* klass = slotRawObject(slot)->classptr;
-	auto* klassNameSymbol = slotRawSymbol(&klass->name);
-	return klassNameSymbol == _vcvPrototypeProcessBlockSym;
-}
-
-template <typename Array>
-bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& outArray, int size) noexcept
-{
-	// OUTPUTS
-	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_array)) {
-		fail(std::string(context) + " must be a Array");
-		return false;
-	}
-	auto* inObj = slotRawObject(&inSlot);
-	if (inObj->size != NUM_ROWS) {
-		fail(std::string(context) + " must be of size " + std::to_string(NUM_ROWS));
-		return false;
-	}
-
-	for (int i = 0; i < NUM_ROWS; ++i) {
-		if (!copyFloatArray(inObj->slots[i], "subarray", outArray[i], size)) {
-			return false;
+	auto* resultSlot = &scGlobals()->result;
+	if (IsInt(resultSlot)) {
+		auto intResult = slotRawInt(resultSlot);
+		if (intResult > 0) {
+			return intResult;
+		} else {
+			fail(std::string("Result of '") + text + "' should be > 0");
+			return -1;
 		}
+	} else {
+		fail(std::string("Result of '") + text + "' should be Integer");
+		return -1;
 	}
-
-	return true;
 }
 
-bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept
-{
-	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_floatarray)) {
-		fail(std::string(context) + " must be a FloatArray");
-		return false;
-	}
-	auto* floatArrayObj = slotRawObject(&inSlot);
-	if (floatArrayObj->size != size) {
-		fail(std::string(context) + " must be of size " + std::to_string(size));
-		return false;
-	}
-
-	auto* floatArray = reinterpret_cast<const PyrFloatArray*>(floatArrayObj);
-	auto* rawArray = static_cast<const float*>(floatArray->f);
-	std::memcpy(outArray, rawArray, size * sizeof(float));
-	return true;
-}
 
 void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexcept {
 	auto* resultSlot = &scGlobals()->result;
@@ -302,60 +314,54 @@ void SC_VcvPrototypeClient::readScProcessBlockResult(ProcessBlock* block) noexce
 		return;
 }
 
-void SC_VcvPrototypeClient::fail(const std::string& msg) noexcept {
-	_engine->display(msg);
-	_ok = false;
+bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) const noexcept {
+	if (NotObj(slot))
+		return false;
+
+	auto* klass = slotRawObject(slot)->classptr;
+	auto* klassNameSymbol = slotRawSymbol(&klass->name);
+	return klassNameSymbol == _vcvPrototypeProcessBlockSym;
 }
 
-#ifdef SC_VCV_ENGINE_TIMING
-static long long int gmax = 0;
-static constexpr unsigned int nTimes = 1024;
-static long long int times[nTimes] = {};
-static unsigned int timesIndex = 0;
-#endif
-
-void SC_VcvPrototypeClient::evaluateProcessBlock(ProcessBlock* block) noexcept {
-#ifdef SC_VCV_ENGINE_TIMING
-	auto start = std::chrono::high_resolution_clock::now();
-#endif
-	auto* buf = buildScProcessBlockString(block);
-	interpret(buf);
-	readScProcessBlockResult(block);
-#ifdef SC_VCV_ENGINE_TIMING
-	auto end = std::chrono::high_resolution_clock::now();
-	auto ticks = (end - start).count();
-
-	times[timesIndex] = ticks;
-	timesIndex++;
-	timesIndex %= nTimes;
-	if (gmax < ticks)
-	{
-		gmax = ticks;
-		std::printf("MAX TIME %lld\n", ticks);
+bool SC_VcvPrototypeClient::copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept
+{
+	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_floatarray)) {
+		fail(std::string(context) + " must be a FloatArray");
+		return false;
 	}
-	if (timesIndex == 0)
-	{
-		std::printf("AVG TIME %lld\n", std::accumulate(std::begin(times), std::end(times), 0ull) / nTimes);
+	auto* floatArrayObj = slotRawObject(&inSlot);
+	if (floatArrayObj->size != size) {
+		fail(std::string(context) + " must be of size " + std::to_string(size));
+		return false;
 	}
-#endif
+
+	auto* floatArray = reinterpret_cast<const PyrFloatArray*>(floatArrayObj);
+	auto* rawArray = static_cast<const float*>(floatArray->f);
+	std::memcpy(outArray, rawArray, size * sizeof(float));
+	return true;
 }
 
-int SC_VcvPrototypeClient::getResultAsInt(const char* text) noexcept {
-	interpret(text);
+template <typename Array>
+bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const char* context, Array& outArray, int size) noexcept
+{
+	// OUTPUTS
+	if (!isKindOfSlot(const_cast<PyrSlot*>(&inSlot), class_array)) {
+		fail(std::string(context) + " must be a Array");
+		return false;
+	}
+	auto* inObj = slotRawObject(&inSlot);
+	if (inObj->size != NUM_ROWS) {
+		fail(std::string(context) + " must be of size " + std::to_string(NUM_ROWS));
+		return false;
+	}
 
-	auto* resultSlot = &scGlobals()->result;
-	if (IsInt(resultSlot)) {
-		auto intResult = slotRawInt(resultSlot);
-		if (intResult > 0) {
-			return intResult;
-		} else {
-			fail(std::string("Result of '") + text + "' should be > 0");
-			return -1;
+	for (int i = 0; i < NUM_ROWS; ++i) {
+		if (!copyFloatArray(inObj->slots[i], "subarray", outArray[i], size)) {
+			return false;
 		}
-	} else {
-		fail(std::string("Result of '") + text + "' should be Integer");
-		return -1;
 	}
+
+	return true;
 }
 
 __attribute__((constructor(1000)))
