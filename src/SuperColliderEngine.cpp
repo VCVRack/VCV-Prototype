@@ -174,60 +174,52 @@ static char processBlockStringScratchBuf[bufferSize] = PROCESS_BEGIN_STRING;
 constexpr unsigned processBeginStringOffset = sizeof(PROCESS_BEGIN_STRING);
 #undef PROCESS_BEGIN_STRING
 
-template <typename... Ts>
-static void doAppend(char*& buf, const char* fmt, Ts... vals) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-security"
-	buf += std::sprintf(buf, fmt, vals...);
-#pragma GCC diagnostic pop
-}
-
 const char* SC_VcvPrototypeClient::buildScProcessBlockString(const ProcessBlock* block) const noexcept {
 	auto* buf = processBlockStringScratchBuf + processBeginStringOffset - 1;
 
 	// Perhaps imprudently assuming snprintf never returns a negative code
-	doAppend(buf, "%.6f,%.6f,%d,", block->sampleRate, block->sampleTime, block->bufferSize);
+	buf += std::sprintf(buf, "%.6f,%.6f,%d,", block->sampleRate, block->sampleTime, block->bufferSize);
 
 	auto&& appendInOutArray = [&buf](const int bufferSize, const float (&data)[NUM_ROWS][MAX_BUFFER_SIZE]) {
-		doAppend(buf, "[");
+		buf += std::sprintf(buf, "[");
 		for (int i = 0; i < NUM_ROWS; ++i) {
-			doAppend(buf, "FloatArray[");
+			buf += std::sprintf(buf, "FloatArray[");
 			for (int j = 0; j < bufferSize; ++j) {
-				doAppend(buf, "%g%c", data[i][j], j == bufferSize - 1 ? ' ' : ',');
+				buf += std::sprintf(buf, "%g%c", data[i][j], j == bufferSize - 1 ? ' ' : ',');
 			}
-			doAppend(buf, "]%c", i == NUM_ROWS - 1 ? ' ' : ',');
+			buf += std::sprintf(buf, "]%c", i == NUM_ROWS - 1 ? ' ' : ',');
 		}
-		doAppend(buf, "],");
+		buf += std::sprintf(buf, "],");
 	};
 
 	appendInOutArray(block->bufferSize, block->inputs);
 	appendInOutArray(block->bufferSize, block->outputs);
 
 	// knobs
-	doAppend(buf, "FloatArray[");
+	buf += std::sprintf(buf, "FloatArray[");
 	for (int i = 0; i < NUM_ROWS; ++i)
-		doAppend(buf, "%g%c", block->knobs[i], i == NUM_ROWS - 1 ? ' ' : ',');
+		buf += std::sprintf(buf, "%g%c", block->knobs[i], i == NUM_ROWS - 1 ? ' ' : ',');
 
 	// switches
-	doAppend(buf, "],[");
+	buf += std::sprintf(buf, "],[");
 	for (int i = 0; i < NUM_ROWS; ++i)
-		doAppend(buf, "%s%c", block->switches[i] ? "true" : "false", i == NUM_ROWS - 1 ? ' ' : ',');
-	doAppend(buf, "]");
+		buf += std::sprintf(buf, "%s%c", block->switches[i] ? "true" : "false", i == NUM_ROWS - 1 ? ' ' : ',');
+	buf += std::sprintf(buf, "]");
 
 	// lights, switchlights
 	auto&& appendLightsArray = [&buf](const float (&array)[NUM_ROWS][3]) {
-		doAppend(buf, ",[");
+		buf += std::sprintf(buf, ",[");
 		for (int i = 0; i < NUM_ROWS; ++i) {
-			doAppend(buf, "FloatArray[%g,%g,%g]%c", array[i][0], array[i][1], array[i][2],
+			buf += std::sprintf(buf, "FloatArray[%g,%g,%g]%c", array[i][0], array[i][1], array[i][2],
 				i == NUM_ROWS - 1 ? ' ' : ',');
 		}
-		doAppend(buf, "]");
+		buf += std::sprintf(buf, "]");
 	};
 
 	appendLightsArray(block->lights);
 	appendLightsArray(block->switchLights);
 
-	doAppend(buf, "));");
+	buf += std::sprintf(buf, "));");
 
 	return processBlockStringScratchBuf;
 }
