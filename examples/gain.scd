@@ -1,53 +1,31 @@
 // Simplest possible script using all variables, demonstrating buffering
 // by Brian Heim
 
-~i = 0;
-a = 0;
-// ~process = {|x| a = max(a, bench { 12.do { 256.do { |i| sin(i)} }; post(x); }); post(a) }
-~vcv_bufferSize = 64;
 ~vcv_frameDivider = 1;
+~vcv_bufferSize = 32;
 
-~text = "Hi! I am the first working proof of concept of the SuperCollider prototyper for VCV Rack!";
-~textPos = 0;
-~textWin = 22;
-~counter = 1;
-~text = String.fill(~textWin, $~) ++ ~text ++ String.fill(~textWin, $~);
-~textLen = ~text.size - ~textWin;
-
-~nSamp = 100;
-~phases = ~nSamp.collect { |i| sin(i / ~nSamp * 2pi); };
 ~vcv_process = {|block|
-	VcvPrototypeProcessBlock.numRows.do { |j|
-	block.bufferSize.do { |i|
-		block.outputs[j][i] = ~phases[~i] * block.knobs[j];
-		~i = ~i + block.knobs[j];
-		~i = ~i mod: ~nSamp;
+	// Loop through each row
+	VcvPrototypeProcessBlock.numRows.do { |i|
+		// Get gain knob
+		var gain = block.knobs[i];
+		// Set gain light (red = 0)
+		block.lights[i][0] = gain;
 
-		block.outputs[j][i] = block.inputs[j][i] * block.outputs[0][i];
-		block.outputs[j][i] = block.outputs[j][i].squared;
+		// Check mute switch
+		block.switchLights[i][0] = if (block.switches[i]) {
+			// Mute output
+			gain = 0;
+			// Enable mute light (red = 0)
+			1
+		} {
+			// Disable mute light
+			0
+		};
+
+		// Iterate input/output buffer
+		block.outputs[i] = block.inputs[i] * gain;
 	};
-	};
 
-	block.switchLights[3][0] = 1.0.rand();
-	block.switchLights[3][1] = 1.0.rand();
-	block.switchLights[3][2] = 1.0.rand();
-
-	~counter = ~counter + 1;
-	if (~counter == 100) {
-		(~text[~textPos..(~textPos+~textWin)]).post;
-		~textPos = ~textPos + 1;
-		~textPos = ~textPos mod: ~textLen;
-		~counter = 0;
-	};
-
-
-	block.knobs[4] = a / ~nSamp;
-	a = a + 0.15;
-	a = a mod: ~nSamp;
-
-	block.lights[2][2] = a * ~i / 1000;
-
-	block.switchLights[5][0] = block.switches[2].if { rand(3/4) } { 0 };
-	block.outputs[0][3] = block.switches[1].if { rand(block.knobs[1]) } { block.outputs[0][3] };
 	block
 }
