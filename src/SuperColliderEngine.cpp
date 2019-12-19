@@ -71,6 +71,7 @@ private:
 	bool copyFloatArray(const PyrSlot& inSlot, const char* context, float* outArray, int size) noexcept;
 
 	SuperColliderEngine* _engine;
+	PyrSymbol* _vcvPrototypeProcessBlockSym;
 	bool _ok = true;
 };
 
@@ -142,6 +143,8 @@ SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 	compileLibrary(/* isStandalone */ true);
 	if (!isLibraryCompiled())
 		fail("Error while compiling class library");
+
+	_vcvPrototypeProcessBlockSym = getsym("VcvPrototypeProcessBlock");
 }
 
 SC_VcvPrototypeClient::~SC_VcvPrototypeClient() {
@@ -229,7 +232,7 @@ bool SC_VcvPrototypeClient::isVcvPrototypeProcessBlock(const PyrSlot* slot) cons
 
 	auto* klass = slotRawObject(slot)->classptr;
 	auto* klassNameSymbol = slotRawSymbol(&klass->name);
-	return klassNameSymbol == getsym("VcvPrototypeProcessBlock");
+	return klassNameSymbol == _vcvPrototypeProcessBlockSym;
 }
 
 template <typename Array>
