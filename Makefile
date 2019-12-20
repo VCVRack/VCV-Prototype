@@ -57,8 +57,10 @@ ifdef ARCH_WIN
 	QUICKJS_MAKE_FLAGS += CONFIG_WIN32=y
 endif
 $(quickjs):
-	cd QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS)
-	cd QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
+	cd dep && git clone "https://github.com/JerrySievert/QuickJS.git"
+	cd dep/QuickJS && git checkout 807adc8ca9010502853d471bd8331cdc1d376b94
+	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS)
+	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
 # LuaJIT
