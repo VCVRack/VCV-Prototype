@@ -115,7 +115,7 @@ $(supercollider):
 	cd dep/supercollider/build && $(CMAKE) .. $(SUPERCOLLIDER_CMAKE_FLAGS)
 	cd dep/supercollider/build && $(MAKE) libsclang
 	cd dep/supercollider/build && $(MAKE) generate_libsclang_link_line
-	cd dep/supercollider/build && $(MAKE) install
+# 	cd dep/supercollider/build && $(MAKE) install
 endif
 
 # Python
