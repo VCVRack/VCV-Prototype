@@ -109,6 +109,7 @@ LDFLAGS += -lpthread -lasound -ludev
 
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 5
+	cd dep/supercollider && git checkout 84b14d10d49edce6dd8303045a884fb7f2bc92e8
 	cd dep/supercollider && git submodule update --init -- $(SUPERCOLLIDER_SUBMODULES)
 	cd dep/supercollider && git apply ../../support/supercollider_get_libsclang_link_line.patch
 	cd dep/supercollider && mkdir build
