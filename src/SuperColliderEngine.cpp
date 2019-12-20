@@ -47,7 +47,7 @@ public:
 	}
 	void evaluateProcessBlock(ProcessBlock* block) noexcept;
 	void setNumRows() noexcept {
-		std::string&& command = "VcvPrototypeProcessBlock.numRows = " + std::to_string(NUM_ROWS);
+		auto&& command = "VcvPrototypeProcessBlock.numRows = " + std::to_string(NUM_ROWS);
 		interpret(command.c_str());
 	}
 	int getFrameDivider() noexcept {
