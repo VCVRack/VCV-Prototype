@@ -161,7 +161,7 @@ SC_VcvPrototypeClient::SC_VcvPrototypeClient(SuperColliderEngine* engine)
 {
 	using Path = SC_LanguageConfig::Path;
 	Path sc_lib_root = rack::asset::plugin(pluginInstance, "dep/supercollider/SCClassLibrary");
-	Path sc_ext_root = rack::asset::plugin(pluginInstance, "dep/supercollider_extensions");
+	Path sc_ext_root = rack::asset::plugin(pluginInstance, "support/supercollider_extensions");
 	Path sc_yaml_path = rack::asset::plugin(pluginInstance, "dep/supercollider/sclang_vcv_config.yml");
 
 	if (!SC_LanguageConfig::defaultLibraryConfig(/* isStandalone */ true))

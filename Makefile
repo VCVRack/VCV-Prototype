@@ -83,17 +83,21 @@ FLAGS += -DNDEBUG # TODO is this OK?
 supercollider := dep/supercollider/build/lang/libsclang.a
 OBJECTS += $(supercollider)
 DEPS += $(supercollider)
+DISTRIBUTABLES += dep/supercollider/SCClassLibrary
+DISTRIBUTABLES += support/supercollider_extensions
 SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=OFF -DSC_EL=OFF -DSC_VIM=OFF -DSC_ED=OFF -DSC_IDE=OFF -DSC_ABLETON_LINK=OFF -DSC_QT=OFF -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=OFF -DBUILD_TESTING=OFF
 SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio_sc_org external_libraries/yaml-cpp
 SUPERCOLLIDER_BRANCH := topic/vcv-prototype-support
-# TODO need some better way of getting link library names!
-LDFLAGS += dep/supercollider/build/lang/../external_libraries/libtlsf.a /usr/lib/libpthread.dylib dep/supercollider/build/lang/../external_libraries/hidapi/mac/libhidapi.a dep/supercollider/build/lang/../external_libraries/hidapi/hidapi_parser/libhidapi_parser.a dep/supercollider/build/lang/../external_libraries/libboost_thread_lib.a dep/supercollider/build/lang/../external_libraries/libboost_system_lib.a dep/supercollider/build/lang/../external_libraries/libboost_regex_lib.a dep/supercollider/build/lang/../external_libraries/libboost_filesystem_lib.a /usr/local/opt/readline/lib/libreadline.dylib -framework Carbon -framework CoreAudio -framework CoreMIDI -framework CoreServices -framework IOKit -framework CoreFoundation /usr/local/opt/libsndfile/lib/libsndfile.dylib dep/supercollider/build/lang/../external_libraries/libyaml.a
+# FIXME should be able to find some better way of getting link library names!
+LDFLAGS += $$(cat dep/supercollider/build/lang/vcv_libsclang_link_line.txt)
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 5
 	cd dep/supercollider && git submodule update --init -- $(SUPERCOLLIDER_SUBMODULES)
+	cd dep/supercollider && git apply ../../support/supercollider_get_libsclang_link_line.patch
 	cd dep/supercollider && mkdir build && cd build
 	cd dep/supercollider/build && cmake .. -G "Unix Makefiles" $(SUPERCOLLIDER_CMAKE_FLAGS)
 	cd dep/supercollider/build && $(MAKE) libsclang
+	cd dep/supercollider/build && $(MAKE) generate_libsclang_link_line
 endif
 
 # Python

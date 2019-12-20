@@ -1,0 +1,22 @@
+diff --git a/lang/CMakeLists.txt b/lang/CMakeLists.txt
+index f370ad7..f73309f 100644
+--- a/lang/CMakeLists.txt
++++ b/lang/CMakeLists.txt
+@@ -388,3 +388,17 @@ else()
+         RUNTIME DESTINATION "bin"
+         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+ endif()
++
++set(LIBSCLANG_LINK_LINE_FILE vcv_libsclang_link_line.txt)
++get_target_property(libsclang_libs libsclang INTERFACE_LINK_LIBRARIES)
++add_custom_command(OUTPUT ${LIBSCLANG_LINK_LINE_FILE} COMMAND echo)
++foreach(lib IN LISTS libsclang_libs)
++    if(TARGET ${lib})
++        add_custom_command(APPEND OUTPUT ${LIBSCLANG_LINK_LINE_FILE}
++            COMMAND echo $<TARGET_FILE:${lib}> ">>" ${LIBSCLANG_LINK_LINE_FILE})
++    else()
++        add_custom_command(APPEND OUTPUT ${LIBSCLANG_LINK_LINE_FILE}
++            COMMAND echo ${lib} ">>" ${LIBSCLANG_LINK_LINE_FILE})
++    endif()
++endforeach()
++add_custom_target(generate_libsclang_link_line DEPENDS ${LIBSCLANG_LINK_LINE_FILE})
