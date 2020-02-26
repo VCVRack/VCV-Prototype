@@ -17,7 +17,7 @@ DUKTAPE ?= 0
 QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
-SUPERCOLLIDER ?= 1
+SUPERCOLLIDER ?= 0
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
