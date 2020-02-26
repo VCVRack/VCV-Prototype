@@ -24,14 +24,11 @@ efsw := dep/lib/libefsw-static-release.a
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
-	cd dep && $(WGET) "https://bitbucket.org/SpartanJ/efsw/get/e6afbec564e2.zip"
-	cd dep && $(SHA256) e6afbec564e2.zip 8589dbedac7434f1863637af696354a9f1fcc28c6397c37b492a797ae62976be
-	cd dep && $(UNZIP) e6afbec564e2.zip
-	cd dep/SpartanJ-efsw-e6afbec564e2 && premake4 gmake
-	cd dep/SpartanJ-efsw-e6afbec564e2 && $(MAKE) -C make/* config=release efsw-static-lib
+	cd dep/efsw && premake4 gmake
+	cd dep/efsw && $(MAKE) -C make/* config=release efsw-static-lib
 	mkdir -p dep/lib dep/include
-	cd dep/SpartanJ-efsw-e6afbec564e2 && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
-	cd dep/SpartanJ-efsw-e6afbec564e2 && cp -R include/efsw $(DEP_PATH)/include/
+	cd dep/efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
+	cd dep/efsw && cp -R include/efsw $(DEP_PATH)/include/
 
 # Duktape
 ifeq ($(DUKTAPE), 1)
