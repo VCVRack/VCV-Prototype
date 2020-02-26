@@ -24,11 +24,11 @@ efsw := dep/lib/libefsw-static-release.a
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
-	cd dep/efsw && premake4 gmake
-	cd dep/efsw && $(MAKE) -C make/* config=release efsw-static-lib
+	cd efsw && premake4 gmake
+	cd efsw && $(MAKE) -C make/* config=release efsw-static-lib
 	mkdir -p dep/lib dep/include
-	cd dep/efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
-	cd dep/efsw && cp -R include/efsw $(DEP_PATH)/include/
+	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
+	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
 # Duktape
 ifeq ($(DUKTAPE), 1)

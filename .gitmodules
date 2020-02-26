@@ -1,3 +1,3 @@
 [submodule "dep/efsw"]
-	path = dep/efsw
+	path = efsw
 	url = https://github.com/SpartanJ/efsw.git
