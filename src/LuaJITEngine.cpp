@@ -33,6 +33,7 @@ struct LuaJITEngine : ScriptEngine {
 		luaopen_string(L);
 		luaopen_table(L);
 		luaopen_math(L);
+		luaopen_bit(L);
 
 		// Set user pointer
 		lua_pushlightuserdata(L, this);
