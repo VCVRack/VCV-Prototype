@@ -34,6 +34,11 @@ struct LuaJITEngine : ScriptEngine {
 		luaopen_table(L);
 		luaopen_math(L);
 		luaopen_bit(L);
+		// Loads the JIT package otherwise it will be off
+		luaopen_jit(L);
+		// Disables access to the JIT package
+		lua_pushnil(L);
+		lua_setglobal(L,"jit");
 
 		// Set user pointer
 		lua_pushlightuserdata(L, this);
