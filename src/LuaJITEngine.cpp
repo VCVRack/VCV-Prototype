@@ -36,7 +36,7 @@ struct LuaJITEngine : ScriptEngine {
 		luaopen_bit(L);
 		// Loads the JIT package otherwise it will be off
 		luaopen_jit(L);
-		// Diables access to the JIT package
+		// Disables access to the JIT package
 		lua_pushnil(L);
 		lua_setglobal(L,"jit");
 
