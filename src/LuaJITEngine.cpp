@@ -28,16 +28,12 @@ struct LuaJITEngine : ScriptEngine {
 			return -1;
 		}
 
-		// Import the common Lua libraries
-		luaL_openlibs(L);
-		// Unloads the unsafe libraries
-		lua_pushinteger(L, 0);
-		lua_setglobal(L, "os");
-		lua_pushinteger(L, 0);
-		lua_setglobal(L, "io");
-		// Unloads 'require' so 'io' and 'os' cannot be reloaded
-		lua_pushinteger(L, 0);
-		lua_setglobal(L, "require");
+		// Import a subset of the standard library
+		luaopen_base(L);
+		luaopen_string(L);
+		luaopen_table(L);
+		luaopen_math(L);
+		luaopen_bit(L);
 
 		// Set user pointer
 		lua_pushlightuserdata(L, this);
