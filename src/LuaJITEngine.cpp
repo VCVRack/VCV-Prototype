@@ -27,10 +27,21 @@ LUALIB_API void custom_openlibs(lua_State *L)
 struct LuaJITEngine : ScriptEngine {
 	lua_State* L = NULL;
 
-	struct SafeArray {
-		void* p;
-		size_t len;
+	// This is a mirror of ProcessBlock that we are going to use
+	// to provide 1-based indices within the Lua VM
+	struct LuaProcessBlock {
+		float sampleRate;
+		float sampleTime;
+		int bufferSize;
+		float* inputs[NUM_ROWS+1];
+		float* outputs[NUM_ROWS+1];
+		float* knobs;
+		bool* switches;
+		float* lights[NUM_ROWS+1];
+		float* switchLights[NUM_ROWS+1];
 	};
+
+	LuaProcessBlock block;
 
 	~LuaJITEngine() {
 		if (L)
@@ -42,7 +53,22 @@ struct LuaJITEngine : ScriptEngine {
 	}
 
 	int run(const std::string& path, const std::string& script) override {
-		ProcessBlock* block = getProcessBlock();
+		ProcessBlock* original_block = getProcessBlock();
+
+		block.sampleRate = original_block->sampleRate;
+		block.sampleTime = original_block->sampleTime;
+		block.bufferSize = original_block->bufferSize;
+
+		// Initialize all the pointers with an offset of -1
+		block.knobs = (float*)&(original_block->knobs[-1]);
+		block.switches = (bool*)&(original_block->switches[-1]);
+
+		for(int i = 1; i < NUM_ROWS + 1; i++) {
+			block.inputs[i] = (float*)&(original_block->inputs[i-1][-1]);
+			block.outputs[i] = (float*)&(original_block->outputs[i-1][-1]);
+			block.lights[i] = (float*)&(original_block->lights[i-1][-1]);
+			block.switchLights[i] = (float*)&(original_block->switchLights[i-1][-1]);
+		}
 
 		L = luaL_newstate();
 		if (!L) {
@@ -80,20 +106,21 @@ struct LuaJITEngine : ScriptEngine {
 		std::stringstream ffi_stream;
 		ffi_stream
 		<< "local ffi = require('ffi')" << std::endl
-		// Describes the struct 'ProcessBlock' that way LuaJIT knows how to access the data
+		// Describes the struct 'LuaProcessBlock' that way LuaJIT knows how to access the data
 		<< "ffi.cdef[[" << std::endl
-		<< "struct ProcessBlock {" << std::endl
+		<< "struct LuaProcessBlock {" << std::endl
 		<< "float sampleRate;" << std::endl
 		<< "float sampleTime;" << std::endl
 		<< "int bufferSize;" << std::endl
-		<< "float inputs[" << NUM_ROWS << "][" << MAX_BUFFER_SIZE << "];" << std::endl
-		<< "float outputs[" << NUM_ROWS << "][" << MAX_BUFFER_SIZE << "];" << std::endl
-		<< "float knobs[" << NUM_ROWS << "];" << std::endl
-		<< "bool switches[" << NUM_ROWS << "];" << std::endl
-		<< "float lights[" << NUM_ROWS << "][3];" << std::endl
-		<< "float switchLights[" << NUM_ROWS << "][3];};]]" << std::endl
+		<< "float *inputs[" << NUM_ROWS + 1 << "];" << std::endl
+		<< "float *outputs[" << NUM_ROWS + 1 << "];" << std::endl
+		<< "float *knobs;" << std::endl
+		<< "bool *switches;" << std::endl
+		<< "float *lights[" << NUM_ROWS + 1 << "];" << std::endl
+		<< "float *switchLights[" << NUM_ROWS + 1 << "];" << std::endl
+		<<"};]]" << std::endl
 		// Declares the function 'castBlock' used to transform the 'block' pointer into a LuaJIT cdata
-		<< "function castBlock(b) return ffi.cast('struct ProcessBlock*', b) end";
+		<< "function castBlock(b) return ffi.cast('struct LuaProcessBlock*', b) end";
 		std::string ffi_script = ffi_stream.str();
 
 		// Compile the ffi script
@@ -157,7 +184,7 @@ struct LuaJITEngine : ScriptEngine {
 
 		// Create block object
         lua_getglobal(L, "castBlock");
-        lua_pushlightuserdata(L, (void *)block);
+        lua_pushlightuserdata(L, (void *)&block);
         if (lua_pcall(L, 1, 1, 0) != 0)
             printf("error running function 'castBlock': %s", lua_tostring(L, -1));
 
@@ -165,6 +192,13 @@ struct LuaJITEngine : ScriptEngine {
 	}
 
 	int process() override {
+		ProcessBlock* original_block = getProcessBlock();
+
+		// Update the values of the block (the pointers should not change)
+		block.sampleRate = original_block->sampleRate;
+		block.sampleTime = original_block->sampleTime;
+		block.bufferSize = original_block->bufferSize;
+
 		// Duplicate process function
 		lua_pushvalue(L, -2);
 		// Duplicate block
