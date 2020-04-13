@@ -6,23 +6,23 @@ config.bufferSize = 32
 
 function process(block)
 	-- Loop through each column
-	for i=0,5 do
+	for i=1,6 do
 		-- Get gain knob
 		gain = block.knobs[i]
 		-- Set gain light (red = 1)
-		block.lights[i][0] = gain
+		block.lights[i][1] = gain
 		-- Check mute switch
 		if block.switches[i] then
 			-- Mute output
 			gain = 0
 			-- Enable mute light (red = 1)
-			block.switchLights[i][0] = 1
+			block.switchLights[i][1] = 1
 		else
 			-- Disable mute light
-			block.switchLights[i][0] = 0
+			block.switchLights[i][1] = 0
 		end
 		-- Iterate input/output buffer
-		for j=0,block.bufferSize-1 do
+		for j=1,block.bufferSize do
 			-- Get input
 			x = block.inputs[i][j]
 			-- Apply gain to input
