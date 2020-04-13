@@ -34,10 +34,10 @@ function process(block)
 		h = (1 - i / 6 + phase) % 1
 		rgb = hsvToRgb(h, 1, 1)
 		for c=1,3 do
-			block.lights[i][c] = rgb[c]
-			block.switchLights[i][c] = rgb[c]
+			block.lights[i-1][c-1] = rgb[c]
+			block.switchLights[i-1][c-1] = rgb[c]
 		end
-		block.outputs[i][1] = math.sin(2 * math.pi * h) * 5 + 5
+		block.outputs[i-1][0] = math.sin(2 * math.pi * h) * 5 + 5
 	end
 end
 

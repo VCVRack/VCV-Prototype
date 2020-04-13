@@ -1,6 +1,28 @@
 #include "ScriptEngine.hpp"
 #include <luajit-2.0/lua.hpp>
 
+static const luaL_Reg lj_lib_load[] = {
+    { "",              luaopen_base },
+    { LUA_LOADLIBNAME, luaopen_package },
+    { LUA_TABLIBNAME,  luaopen_table },
+    { LUA_STRLIBNAME,  luaopen_string },
+    { LUA_MATHLIBNAME, luaopen_math },
+    { LUA_BITLIBNAME,  luaopen_bit },
+    { LUA_JITLIBNAME,  luaopen_jit },
+    { LUA_FFILIBNAME,  luaopen_ffi },
+    { NULL,            NULL }
+};
+
+LUALIB_API void custom_openlibs(lua_State *L)
+{
+    const luaL_Reg *lib;
+    for (lib = lj_lib_load; lib->func; lib++) {
+    	lua_pushcfunction(L, lib->func);
+    	lua_pushstring(L, lib->name);
+    	lua_call(L, 1, 0);
+  	}
+  	lua_pop(L, 1);
+}
 
 struct LuaJITEngine : ScriptEngine {
 	lua_State* L = NULL;
@@ -29,16 +51,7 @@ struct LuaJITEngine : ScriptEngine {
 		}
 
 		// Import a subset of the standard library
-		luaopen_base(L);
-		luaopen_string(L);
-		luaopen_table(L);
-		luaopen_math(L);
-		luaopen_bit(L);
-		// Loads the JIT package otherwise it will be off
-		luaopen_jit(L);
-		// Disables access to the JIT package
-		lua_pushnil(L);
-		lua_setglobal(L,"jit");
+		custom_openlibs(L);
 
 		// Set user pointer
 		lua_pushlightuserdata(L, this);
@@ -63,7 +76,45 @@ struct LuaJITEngine : ScriptEngine {
 		}
 		lua_setglobal(L, "config");
 
-		// Compile script
+		// Loads the FFI auxiliary functions.
+		std::stringstream ffi_stream;
+		ffi_stream
+		<< "local ffi = require('ffi')" << std::endl
+		// Describes the struct 'ProcessBlock' that way LuaJIT knows how to access the data
+		<< "ffi.cdef[[" << std::endl
+		<< "struct ProcessBlock {" << std::endl
+		<< "float sampleRate;" << std::endl
+		<< "float sampleTime;" << std::endl
+		<< "int bufferSize;" << std::endl
+		<< "float inputs[" << NUM_ROWS << "][" << MAX_BUFFER_SIZE << "];" << std::endl
+		<< "float outputs[" << NUM_ROWS << "][" << MAX_BUFFER_SIZE << "];" << std::endl
+		<< "float knobs[" << NUM_ROWS << "];" << std::endl
+		<< "bool switches[" << NUM_ROWS << "];" << std::endl
+		<< "float lights[" << NUM_ROWS << "][3];" << std::endl
+		<< "float switchLights[" << NUM_ROWS << "][3];};]]" << std::endl
+		// Declares the function 'castBlock' used to transform the 'block' pointer into a LuaJIT cdata
+		<< "function castBlock(b) return ffi.cast('struct ProcessBlock*', b) end";
+		std::string ffi_script = ffi_stream.str();
+
+		// Compile the ffi script
+		if (luaL_loadbuffer(L, ffi_script.c_str(), ffi_script.size(), "ffi_script.lua")) {
+			const char* s = lua_tostring(L, -1);
+			WARN("LuaJIT: %s", s);
+			display(s);
+			lua_pop(L, 1);
+			return -1;
+		}
+
+		// Run the ffi script
+		if (lua_pcall(L, 0, 0, 0)) {
+			const char* s = lua_tostring(L, -1);
+			WARN("LuaJIT: %s", s);
+			display(s);
+			lua_pop(L, 1);
+			return -1;
+		}
+
+		// Compile user script
 		if (luaL_loadbuffer(L, script.c_str(), script.size(), path.c_str())) {
 			const char* s = lua_tostring(L, -1);
 			WARN("LuaJIT: %s", s);
@@ -104,125 +155,16 @@ struct LuaJITEngine : ScriptEngine {
 			return -1;
 		}
 
-		// FloatArray metatable
-		lua_newtable(L);
-		{
-			// __index
-			lua_pushcfunction(L, native_FloatArray_index);
-			lua_setfield(L, -2, "__index");
-			// __newindex
-			lua_pushcfunction(L, native_FloatArray_newindex);
-			lua_setfield(L, -2, "__newindex");
-			// __len
-			lua_pushcfunction(L, native_FloatArray_len);
-			lua_setfield(L, -2, "__len");
-		}
-		lua_setglobal(L, "FloatArray");
-
-		// BoolArray metatable
-		lua_newtable(L);
-		{
-			// __index
-			lua_pushcfunction(L, native_BoolArray_index);
-			lua_setfield(L, -2, "__index");
-			// __newindex
-			lua_pushcfunction(L, native_BoolArray_newindex);
-			lua_setfield(L, -2, "__newindex");
-			// __len
-			lua_pushcfunction(L, native_BoolArray_len);
-			lua_setfield(L, -2, "__len");
-		}
-		lua_setglobal(L, "BoolArray");
-
 		// Create block object
-		lua_newtable(L);
-		{
-			// inputs
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				SafeArray* input = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-				input->p = &block->inputs[i];
-				input->len = block->bufferSize;
-				lua_getglobal(L, "FloatArray");
-				lua_setmetatable(L, -2);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_setfield(L, -2, "inputs");
-
-			// outputs
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				SafeArray* output = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-				output->p = &block->outputs[i];
-				output->len = block->bufferSize;
-				lua_getglobal(L, "FloatArray");
-				lua_setmetatable(L, -2);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_setfield(L, -2, "outputs");
-
-			// knobs
-			SafeArray* knobs = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-			knobs->p = &block->knobs;
-			knobs->len = 6;
-			lua_getglobal(L, "FloatArray");
-			lua_setmetatable(L, -2);
-			lua_setfield(L, -2, "knobs");
-
-			// switches
-			SafeArray* switches = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-			switches->p = &block->switches;
-			switches->len = 6;
-			lua_getglobal(L, "BoolArray");
-			lua_setmetatable(L, -2);
-			lua_setfield(L, -2, "switches");
-
-			// lights
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				SafeArray* light = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-				light->p = &block->lights[i];
-				light->len = 3;
-				lua_getglobal(L, "FloatArray");
-				lua_setmetatable(L, -2);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_setfield(L, -2, "lights");
-
-			// switchLights
-			lua_newtable(L);
-			for (int i = 0; i < NUM_ROWS; i++) {
-				SafeArray* switchLight = (SafeArray*) lua_newuserdata(L, sizeof(SafeArray));
-				switchLight->p = &block->switchLights[i];
-				switchLight->len = 3;
-				lua_getglobal(L, "FloatArray");
-				lua_setmetatable(L, -2);
-				lua_rawseti(L, -2, i + 1);
-			}
-			lua_setfield(L, -2, "switchLights");
-		}
+        lua_getglobal(L, "castBlock");
+        lua_pushlightuserdata(L, (void *)block);
+        if (lua_pcall(L, 1, 1, 0) != 0)
+            printf("error running function 'castBlock': %s", lua_tostring(L, -1));
 
 		return 0;
 	}
 
 	int process() override {
-		ProcessBlock* block = getProcessBlock();
-
-		// Set block
-		{
-			// sampleRate
-			lua_pushnumber(L, block->sampleRate);
-			lua_setfield(L, -2, "sampleRate");
-
-			// sampleTime
-			lua_pushnumber(L, block->sampleTime);
-			lua_setfield(L, -2, "sampleTime");
-
-			// bufferSize
-			lua_pushinteger(L, block->bufferSize);
-			lua_setfield(L, -2, "bufferSize");
-		}
-
 		// Duplicate process function
 		lua_pushvalue(L, -2);
 		// Duplicate block
@@ -263,62 +205,6 @@ struct LuaJITEngine : ScriptEngine {
 			s = "(null)";
 		getEngine(L)->display(s);
 		return 0;
-	}
-
-	static int native_FloatArray_index(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		float* data = (float*) a->p;
-		size_t index = lua_tointeger(L, 2) - 1;
-		if (index >= a->len) {
-			lua_pushstring(L, "Array out of bounds");
-			lua_error(L);
-		}
-		lua_pushnumber(L, data[index]);
-		return 1;
-	}
-	static int native_FloatArray_newindex(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		float* data = (float*) a->p;
-		size_t index = lua_tointeger(L, 2) - 1;
-		if (index >= a->len) {
-			lua_pushstring(L, "Array out of bounds");
-			lua_error(L);
-		}
-		data[index] = lua_tonumber(L, 3);
-		return 0;
-	}
-	static int native_FloatArray_len(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		lua_pushinteger(L, a->len);
-		return 1;
-	}
-
-	static int native_BoolArray_index(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		bool* data = (bool*) a->p;
-		size_t index = lua_tointeger(L, 2) - 1;
-		if (index >= a->len) {
-			lua_pushstring(L, "Array out of bounds");
-			lua_error(L);
-		}
-		lua_pushboolean(L, data[index]);
-		return 1;
-	}
-	static int native_BoolArray_newindex(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		bool* data = (bool*) a->p;
-		size_t index = lua_tointeger(L, 2) - 1;
-		if (index >= a->len) {
-			lua_pushstring(L, "Array out of bounds");
-			lua_error(L);
-		}
-		data[index] = lua_toboolean(L, 3);
-		return 0;
-	}
-	static int native_BoolArray_len(lua_State* L) {
-		SafeArray* a = (SafeArray*) lua_touserdata(L, 1);
-		lua_pushinteger(L, a->len);
-		return 1;
 	}
 };
 

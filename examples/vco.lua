@@ -9,10 +9,10 @@ config.bufferSize = 16
 phase = 0
 function process(block)
 	-- Knob ranges from -5 to 5 octaves
-	pitch = block.knobs[1] * 10 - 5
+	pitch = block.knobs[0] * 10 - 5
 	-- Input follows 1V/oct standard
 	-- Take the first input's first buffer value
-	pitch = pitch + block.inputs[1][1]
+	pitch = pitch + block.inputs[0][0]
 
 	-- The relationship between 1V/oct pitch and frequency is `freq = 2^pitch`.
 	-- Default frequency is middle C (C4) in Hz.
@@ -22,13 +22,13 @@ function process(block)
 
 	-- Set all samples in output buffer
 	deltaPhase = config.frameDivider * block.sampleTime * freq
-	for i=1,block.bufferSize do
+	for i=0,block.bufferSize-1 do
 		-- Accumulate phase
 		phase = phase + deltaPhase
 		-- Wrap phase around range [0, 1]
 		phase = phase % 1
 
 		-- Convert phase to sine output
-		block.outputs[1][i] = math.sin(2 * math.pi * phase) * 5
+		block.outputs[0][i] = math.sin(2 * math.pi * phase) * 5
 	end
 end
