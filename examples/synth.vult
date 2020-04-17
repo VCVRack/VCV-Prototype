@@ -1,0 +1,80 @@
+/*
+
+Simple synthesizer with one oscillator, LFO and envelope.
+
+Author: Leonardo Laguna Ruiz - leonardo@vult-dsp.com
+
+Check the API documentation in the basic.vult example
+
+*/
+
+fun env(gate) {
+   mem x;
+   val k = if gate > x then 0.05 else 0.0002;
+   x = x + (gate - x) * k;
+   return x;
+}
+
+fun edge(x):bool {
+    mem pre_x;
+    val v:bool = (pre_x <> x) && (pre_x == false);
+    pre_x = x;
+    return v;
+}
+
+fun pitchToFreq(cv) {
+   return 261.6256 * exp(cv * 0.69314718056);
+}
+
+fun phasor(pitch, reset){
+    mem phase;
+    val rate = pitchToFreq(pitch) * sampletime();
+    phase = phase + rate;
+    if(phase > 1.0)
+        phase = phase - 1.0;
+    if(reset)
+        phase = 0.0;
+    return phase;
+}
+
+fun oscillator(pitch, mod) {
+   mem pre_phase1;
+   // Implements the resonant filter simulation as shown in
+   // http://en.wikipedia.org/wiki/Phase_distortion_synthesis
+   val phase1 = phasor(pitch, false);
+   val comp   = 1.0 - phase1;
+   val reset  = edge((pre_phase1 - phase1) > 0.5);
+   pre_phase1 = phase1;
+   val phase2 = phasor(pitch + mod, reset);
+   val sine  = sin(2.0 * pi() * phase2);
+   return sine * comp;
+}
+
+fun lfo(f, gate){
+    mem phase;
+    val rate = f * 10.0 * sampletime();
+    if(edge(gate > 0.0))
+        phase = 0.0;
+    phase = phase + rate;
+    if(phase > 1.0)
+        phase = phase - 1.0;
+    return sin(phase * 2.0 * pi()) - 0.5;
+}
+
+// Main processing function
+fun process(cv, gate){
+   // LFO
+   val lfo_rate = getKnob(3);
+   val lfo_amt = getKnob(4);
+   val lfo_val = lfo(lfo_rate, gate) * lfo_amt;
+   // Oscillator
+   val pitch = getKnob(1) + 10.0 * cv - 2.0;
+   val mod = getKnob(2) * 2.0 + lfo_val;
+   val o = oscillator(pitch, mod);
+   // Envelope
+   val e = env(gate);
+   return o * e;
+}
+and update() {
+    _ = display("IN1: CV, IN2: GATE");
+}

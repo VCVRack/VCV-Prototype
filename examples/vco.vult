@@ -1,0 +1,45 @@
+
+/*
+
+Simple wave table VCO.
+
+Author: Leonardo Laguna Ruiz - leonardo@vult-dsp.com
+
+Check the API documentation in the basic.vult example
+
+*/
+
+fun pitchToFreq(cv) @[table(size=128, min=-10.0, max=10.0)] {
+   return 261.6256 * exp(cv * 0.69314718056);
+}
+
+// Generates (at compile time) a wave table based on the provided harmonics
+// To change the wave table, change the 'harmonics' array
+fun wavetable(phase) @[table(size=128, min=0.0, max=1.0)] {
+   val harmonics = [0.0, 1.0, 0.7, 0.5, 0.3];
+   val n = size(harmonics);
+   val acc = 0.0;
+   val i = 0;
+   while(i < n) {
+      acc = acc + harmonics[i] * sin(2.0 * pi() * real(i) * phase);
+      i = i + 1;
+   }
+   return acc / sqrt(real(n));
+}
+
+fun process(input_cv:real) {
+   mem phase;
+   val knob_cv = getKnob(1) - 0.5;
+   val cv = 10.0 * (input_cv + knob_cv);
+   val freq = pitchToFreq(cv);
+   val delta = sampletime() * freq;
+   phase = phase + delta;
+   if(phase > 1.0) {
+      phase = phase - 1.0;
+   }
+
+   return wavetable(phase);
+}
+and update() {
+
+}

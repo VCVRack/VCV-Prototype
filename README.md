@@ -9,6 +9,8 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 
 Supported scripting languages:
 - JavaScript (.js)
+- Lua (.lua)
+- [Vult](https://github.com/modlfo/vult) (.vult)
 - [Add your own below](#adding-a-script-engine)
 
 [Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
@@ -89,6 +91,8 @@ function process(block) {
 }
 ```
 
+The Vult API is slightly different from the JavaScript version. Check the Vult examples included with the plugin to learn how to use the language with the VCV-Prototype plugin.
+
 ## Build dependencies
 
 ### Windows
@@ -125,4 +129,5 @@ sudo pacman -S premake
 - [Wes Milholen](https://grayscale.info/): panel design
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript, disabled), LuaJIT (Lua), Python (in development)
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
+- [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
 - add your name here

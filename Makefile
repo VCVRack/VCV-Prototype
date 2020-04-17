@@ -18,6 +18,13 @@ QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
+VULT ?= 1
+
+# Vult depends on both LuaJIT and QuickJS
+ifeq ($(VULT), 1)
+QUICKJS = 1
+LUAJIT = 1
+endif
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -186,5 +193,16 @@ endif
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE)
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE) install
 
+# Vult
+ifeq ($(VULT), 1)
+SOURCES += src/VultEngine.cpp
+vult := dep/vult/vultc.h
+$(vult):
+	cd dep && mkdir -p vult
+	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.9/vultc.h"
+	$(SHA256) $(vult) 73f53e7595d515ae87fe1c89925e17cd86c2ac75b73b48fa502a2fb0fd1d4847
+FLAGS += -Idep/vult
+DEPS += $(vult)
+endif
 
 include $(RACK_DIR)/plugin.mk
