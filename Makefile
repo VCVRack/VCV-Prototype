@@ -200,7 +200,7 @@ vult := dep/vult/vultc.h
 $(vult):
 	cd dep && mkdir -p vult
 	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.9/vultc.h"
-	$(SHA256) $(vult) 73f53e7595d515ae87fe1c89925e17cd86c2ac75b73b48fa502a2fb0fd1d4847
+	$(SHA256) $(vult) 91f575afd2913d0879df90ee666021065ad726372f0bd306198024dc771cce55
 FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
