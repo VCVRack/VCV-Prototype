@@ -2,7 +2,7 @@
   "slug": "VCV-Prototype",
   "name": "Prototype",
   "version": "1.2.0",
-  "license": "GPL-3.0-only",
+  "license": "GPL-3.0-or-later",
   "brand": "VCV",
   "author": "VCV",
   "authorEmail": "contact@vcvrack.com",
