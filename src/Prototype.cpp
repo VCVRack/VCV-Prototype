@@ -25,49 +25,73 @@ ScriptEngine* createScriptEngine(std::string extension) {
 }
 
 
-// json_t *settingsToJson() {
-// 	json_t *rootJ = json_object();
-// 	json_object_set_new(rootJ, "securityAccepted", json_boolean(securityAccepted));
-// 	return rootJ;
-// }
+static std::string editorPath;
 
-// void settingsFromJson(json_t *rootJ) {
-// 	json_t *securityAcceptedJ = json_object_get(rootJ, "securityAccepted");
-// 	if (securityAcceptedJ)
-// 		securityAccepted = json_boolean_value(securityAcceptedJ);
-// }
 
-// void settingsLoad() {
-// 	// Load plugin settings
-// 	std::string filename = asset::user("VCV-Prototype.json");
-// 	FILE *file = fopen(filename.c_str(), "r");
-// 	if (!file) {
-// 		return;
-// 	}
-// 	DEFER({
-// 		fclose(file);
-// 	});
+json_t *settingsToJson() {
+	json_t *rootJ = json_object();
+	json_object_set_new(rootJ, "editorPath", json_string(editorPath.c_str()));
+	return rootJ;
+}
 
-// 	json_error_t error;
-// 	json_t *rootJ = json_loadf(file, 0, &error);
-// 	if (rootJ) {
-// 		settingsFromJson(rootJ);
-// 		json_decref(rootJ);
-// 	}
-// }
+void settingsFromJson(json_t *rootJ) {
+	json_t *editorPathJ = json_object_get(rootJ, "editorPath");
+	if (editorPathJ)
+		editorPath = json_string_value(editorPathJ);
+}
 
-// void settingsSave() {
-// 	json_t *rootJ = settingsToJson();
+void settingsLoad() {
+	// Load plugin settings
+	std::string filename = asset::user("VCV-Prototype.json");
+	FILE *file = std::fopen(filename.c_str(), "r");
+	if (!file) {
+		return;
+	}
+	DEFER({
+		std::fclose(file);
+	});
 
-// 	std::string filename = asset::user("VCV-Prototype.json");
-// 	FILE *file = fopen(filename.c_str(), "w");
-// 	if (file) {
-// 		json_dumpf(rootJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
-// 		fclose(file);
-// 	}
+	json_error_t error;
+	json_t *rootJ = json_loadf(file, 0, &error);
+	if (rootJ) {
+		settingsFromJson(rootJ);
+		json_decref(rootJ);
+	}
+}
 
-// 	json_decref(rootJ);
-// }
+void settingsSave() {
+	json_t *rootJ = settingsToJson();
+
+	std::string filename = asset::user("VCV-Prototype.json");
+	FILE *file = std::fopen(filename.c_str(), "w");
+	if (file) {
+		json_dumpf(rootJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
+		std::fclose(file);
+	}
+
+	json_decref(rootJ);
+}
+
+void setEditorDialog() {
+	char* editorPathC = NULL;
+#if defined ARCH_LIN
+	editorPathC = osdialog_file(OSDIALOG_OPEN, "/usr/bin/", NULL, NULL);
+#elif defined ARCH_WIN
+	osdialog_filters* filters = osdialog_filters_parse("Executable:exe");
+	editorPathC = osdialog_file(OSDIALOG_OPEN, "C:/", NULL, filters);
+	osdialog_filters_free(filters);
+#elif defined ARCH_MAC
+	osdialog_filters* filters = osdialog_filters_parse("Application:app");
+	editorPathC = osdialog_file(OSDIALOG_OPEN, "/Applications/", NULL, filters);
+	osdialog_filters_free(filters);
+#endif
+	if (!editorPathC)
+		return;
+
+	editorPath = editorPathC;
+	settingsSave();
+	std::free(editorPathC);
+}
 
 
 struct Prototype : Module {
@@ -115,6 +139,10 @@ struct Prototype : Module {
 			configParam(KNOB_PARAMS + i, 0.f, 1.f, 0.5f, string::f("Knob %d", i + 1));
 		for (int i = 0; i < NUM_ROWS; i++)
 			configParam(SWITCH_PARAMS + i, 0.f, 1.f, 0.f, string::f("Switch %d", i + 1));
+		// for (int i = 0; i < NUM_ROWS; i++)
+		// 	configInput(IN_INPUTS + i, string::f("#%d", i + 1));
+		// for (int i = 0; i < NUM_ROWS; i++)
+		// 	configOutput(OUT_OUTPUTS + i, string::f("#%d", i + 1));
 
 		block = new ProcessBlock;
 		setPath("");
@@ -337,6 +365,55 @@ struct Prototype : Module {
 		}
 	}
 
+	bool doesPathExist() {
+		if (path == "")
+			return false;
+		// Try to open file
+		std::ifstream file(path);
+		return file.good();
+	}
+
+	void newScriptDialog() {
+		std::string ext = "js";
+		// Get current extension if a script is currently loaded
+		if (!path.empty()) {
+			ext = string::filenameExtension(string::filename(path));
+		}
+		std::string dir = asset::plugin(pluginInstance, "examples");
+		std::string filename = "Untitled." + ext;
+		char* newPathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
+		if (!newPathC) {
+			return;
+		}
+		std::string newPath = newPathC;
+		std::free(newPathC);
+
+		// Unload script so the user is guaranteed to see the following error messages if they occur.
+		setPath("");
+
+		// Get extension of requested filename
+		ext = string::filenameExtension(string::filename(newPath));
+		if (ext == "") {
+			message = "File extension required";
+			return;
+		}
+		auto it = scriptEngineFactories.find(ext);
+		if (it == scriptEngineFactories.end()) {
+			message = "File extension \"" + ext + "\" not recognized";
+			return;
+		}
+
+		// Copy template to new script
+		std::string templatePath = asset::plugin(pluginInstance, "examples/template." + ext);
+		{
+			std::ifstream templateFile(templatePath, std::ios::binary);
+			std::ofstream newFile(newPath, std::ios::binary);
+			newFile << templateFile.rdbuf();
+		}
+		setPath(newPath);
+		editScript();
+	}
+
 	void loadScriptDialog() {
 		std::string dir = asset::plugin(pluginInstance, "examples");
 		char* pathC = osdialog_file(OSDIALOG_OPEN, dir.c_str(), NULL, NULL);
@@ -379,6 +456,87 @@ struct Prototype : Module {
 		// Load path so that it reloads and is watched.
 		setPath(newPath);
 	}
+
+	void editScript() {
+		if (editorPath.empty())
+			return;
+		if (path.empty())
+			return;
+		// TODO Check on Mac/Windows
+		std::string command = "\"" + editorPath + "\" \"" + path + "\" &";
+		std::system(command.c_str());
+	}
+
+	void setClipboardMessage() {
+		glfwSetClipboardString(APP->window->win, message.c_str());
+	}
+
+	void appendContextMenu(Menu* menu) {
+		struct NewScriptItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->newScriptDialog();
+			}
+		};
+		NewScriptItem* newScriptItem = createMenuItem<NewScriptItem>("New script");
+		newScriptItem->module = this;
+		menu->addChild(newScriptItem);
+
+		struct LoadScriptItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->loadScriptDialog();
+			}
+		};
+		LoadScriptItem* loadScriptItem = createMenuItem<LoadScriptItem>("Load script");
+		loadScriptItem->module = this;
+		menu->addChild(loadScriptItem);
+
+		struct ReloadScriptItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->reloadScript();
+			}
+		};
+		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
+		reloadScriptItem->module = this;
+		menu->addChild(reloadScriptItem);
+
+		struct SaveScriptItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->saveScriptDialog();
+			}
+		};
+		SaveScriptItem* saveScriptItem = createMenuItem<SaveScriptItem>("Save script as");
+		saveScriptItem->module = this;
+		menu->addChild(saveScriptItem);
+
+		struct EditScriptItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->editScript();
+			}
+		};
+		EditScriptItem* editScriptItem = createMenuItem<EditScriptItem>("Edit script");
+		editScriptItem->module = this;
+		editScriptItem->disabled = !doesPathExist();
+		menu->addChild(editScriptItem);
+
+		struct SetEditorItem : MenuItem {
+			void onAction(const event::Action& e) override {
+				setEditorDialog();
+			}
+		};
+		SetEditorItem* setEditorItem = createMenuItem<SetEditorItem>("Set editor application");
+		menu->addChild(setEditorItem);
+
+		// if (!editorPath.empty()) {
+		// 	std::string editorBase = string::filenameBase(string::filename(editorPath));
+		// 	MenuLabel* editorBaseLabel = createMenuLabel(editorBase);
+		// 	menu->addChild(editorBaseLabel);
+		// }
+	}
 };
 
 
@@ -412,7 +570,8 @@ struct FileChoice : LedDisplayChoice {
 	}
 
 	void onAction(const event::Action& e) override {
-		module->loadScriptDialog();
+		Menu* menu = createMenu();
+		module->appendContextMenu(menu);
 	}
 };
 
@@ -436,6 +595,20 @@ struct MessageChoice : LedDisplayChoice {
 			nvgTextBox(args.vg, textOffset.x, textOffset.y, box.size.x - textOffset.x, text.c_str(), NULL);
 		}
 		nvgResetScissor(args.vg);
+	}
+
+	void onAction(const event::Action& e) override {
+		Menu* menu = createMenu();
+
+		struct SetClipboardMessageItem : MenuItem {
+			Prototype* module;
+			void onAction(const event::Action& e) override {
+				module->setClipboardMessage();
+			}
+		};
+		SetClipboardMessageItem* item = createMenuItem<SetClipboardMessageItem>("Copy");
+		item->module = module;
+		menu->addChild(item);
 	}
 };
 
@@ -462,30 +635,6 @@ struct PrototypeDisplay : LedDisplay {
 		messageChoice->box.size.y = box.size.y - messageChoice->box.pos.y;
 		messageChoice->module = module;
 		addChild(messageChoice);
-	}
-};
-
-
-struct LoadScriptItem : MenuItem {
-	Prototype* module;
-	void onAction(const event::Action& e) override {
-		module->loadScriptDialog();
-	}
-};
-
-
-struct ReloadScriptItem : MenuItem {
-	Prototype* module;
-	void onAction(const event::Action& e) override {
-		module->reloadScript();
-	}
-};
-
-
-struct SaveScriptItem : MenuItem {
-	Prototype* module;
-	void onAction(const event::Action& e) override {
-		module->saveScriptDialog();
 	}
 };
 
@@ -548,26 +697,17 @@ struct PrototypeWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 		Prototype* module = dynamic_cast<Prototype*>(this->module);
 
-		menu->addChild(new MenuEntry);
-
-		LoadScriptItem* loadScriptItem = createMenuItem<LoadScriptItem>("Load script");
-		loadScriptItem->module = module;
-		menu->addChild(loadScriptItem);
-
-		ReloadScriptItem* reloadScriptItem = createMenuItem<ReloadScriptItem>("Reload script");
-		reloadScriptItem->module = module;
-		menu->addChild(reloadScriptItem);
-
-		SaveScriptItem* saveScriptItem = createMenuItem<SaveScriptItem>("Save script as");
-		saveScriptItem->module = module;
-		menu->addChild(saveScriptItem);
+		menu->addChild(new MenuSeparator);
+		module->appendContextMenu(menu);
 	}
 
 	void onPathDrop(const event::PathDrop& e) override {
 		Prototype* module = dynamic_cast<Prototype*>(this->module);
-		if (module && e.paths.size() >= 1) {
-			module->setPath(e.paths[0]);
-		}
+		if (!module)
+			return;
+		if (e.paths.size() < 1)
+			return;
+		module->setPath(e.paths[0]);
 	}
 
 	void step() override {
@@ -586,4 +726,5 @@ void init(Plugin* p) {
 	pluginInstance = p;
 
 	p->addModel(createModel<Prototype, PrototypeWidget>("Prototype"));
+	settingsLoad();
 }
