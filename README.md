@@ -8,8 +8,8 @@ Scripting language host for [VCV Rack](https://vcvrack.com/) containing:
 - 6 switches with RGB LEDs
 
 Supported scripting languages:
-- JavaScript (.js)
-- Lua (.lua)
+- JavaScript (ES2020) (.js)
+- [Lua](https://www.lua.org/) (.lua)
 - [Vult](https://github.com/modlfo/vult) (.vult)
 - [Add your own below](#adding-a-script-engine)
 
@@ -91,7 +91,8 @@ function process(block) {
 }
 ```
 
-The Vult API is slightly different from the JavaScript version. Check the Vult examples included with the plugin to learn how to use the language with the VCV-Prototype plugin.
+*The Vult API is slightly different than Prototype's scripting API.
+See `examples/template.vult` for a reference of the Vult API.*
 
 ## Build dependencies
 
@@ -127,7 +128,7 @@ sudo pacman -S premake
 ## Contributors
 
 - [Wes Milholen](https://grayscale.info/): panel design
-- [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript, disabled), LuaJIT (Lua), Python (in development)
+- [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript, not used), LuaJIT (Lua), Python (in development)
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
 - add your name here

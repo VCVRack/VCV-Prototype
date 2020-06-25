@@ -22,8 +22,8 @@ VULT ?= 1
 
 # Vult depends on both LuaJIT and QuickJS
 ifeq ($(VULT), 1)
-QUICKJS = 1
-LUAJIT = 1
+QUICKJS := 1
+LUAJIT := 1
 endif
 
 # Entropia File System Watcher
