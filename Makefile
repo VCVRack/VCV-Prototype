@@ -14,10 +14,11 @@ DISTRIBUTABLES += $(wildcard LICENSE*)
 include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
-QUICKJS ?= 1
+QUICKJS ?= 0
 LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
+LIBPD ?= 1
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -29,6 +30,25 @@ $(efsw):
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
+
+# LibPD
+ifeq ($(LIBPD), 1)
+libpd := dep/lib/libpd.a
+SOURCES += src/LibPDEngine.cpp
+OBJECTS += $(libpd)
+DEPS += $(libpd)
+FLAGS += -Idep/include/libpd
+
+$(libpd):
+	$(WGET) "https://github.com/chairaudio/libpd/archive/master.tar.gz"
+	#$(SHA256) master.tar.gz f8dd2ea21f295badeae1b2ea8d00a91135b24710e67d437f7f18719d728e6e04
+	cd dep && $(UNTAR) ../master.tar.gz
+	$(WGET) "https://github.com/pure-data/pure-data/archive/0.50-2.tar.gz"
+	#$(SHA256) 0.51-0.tar.gz 68b13342aaee70b8ef993eef11dc8d6837323dd6ea74a2f0705461d59f3ad2af
+	cd dep/libpd-master/pure-data && $(UNTAR) ../../../0.50-2.tar.gz --strip-components=1
+	cd dep/libpd-master && make MULTI=true
+	cd dep/libpd-master && $(MAKE) install prefix="$(DEP_PATH)"
+endif
 
 # Duktape
 ifeq ($(DUKTAPE), 1)
@@ -56,7 +76,7 @@ endif
 $(quickjs):
 	cd dep && git clone "https://github.com/JerrySievert/QuickJS.git"
 	cd dep/QuickJS && git checkout 807adc8ca9010502853d471bd8331cdc1d376b94
-	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS)
+	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) 
 	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
