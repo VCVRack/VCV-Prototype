@@ -86,6 +86,12 @@ struct LibPDEngine : ScriptEngine {
 	  	libpd_start_message(1); // one enstry in list
 	  	libpd_add_float(1.0f);
 	  	libpd_finish_message("pd", "dsp");
+
+	  	std::string version = "pd "+std::to_string(PD_MAJOR_VERSION)+"."+
+									std::to_string(PD_MINOR_VERSION)+"."+
+									std::to_string(PD_BUGFIX_VERSION);
+
+		display(version);
 	  
 	    std::string name = string::filename(path);
 	    std::string dir  = string::directory(path);
@@ -147,7 +153,8 @@ struct LibPDEngine : ScriptEngine {
 		//return samples to prototype
 		for (int s = 0; s < _pd_block_size; s++) {
 		    for (int r = 0; r < rows; r++) {
-		    	block->outputs[r][s] = _output[s*rows+r];
+		    	block->outputs[r][s] = _output[s*rows+r] * 4;
+		    	// there is a correction multilpier, because libpd's output is too quiet(?)
 		    }
 		  }
 
@@ -231,7 +238,7 @@ void LibPDEngine::receiveLights(const char *s) {
 	}
 	else { 
 		// print out on command line
-		std::cout << std::string(s) << std::endl;
+		std::cout << "libpd prototype unrecognizes message: " << std::string(s) << std::endl;
 	}
 }
 
@@ -296,10 +303,6 @@ void LibPDEngine::sendInitialStates(const ProcessBlock* block){
 		sendKnob(i, block->knobs[i]);
 		sendSwitch(i, block->knobs[i]);
 	}
-	std::string version = "pd "+std::to_string(PD_MAJOR_VERSION)+"."+
-		std::to_string(PD_MINOR_VERSION)+"."
-		+std::to_string(PD_BUGFIX_VERSION);
-
 
 	for(int i=0; i<NUM_ROWS; i++){
 		g_lights[i][0] = 0;
@@ -310,10 +313,10 @@ void LibPDEngine::sendInitialStates(const ProcessBlock* block){
 		g_switchLights[i][2] = 0;
 	}
 
-	g_utility[0] = "";
-	g_utility[1] = "";
+	//g_utility[0] = "";
+	//g_utility[1] = "";
 
-	g_display_is_valid = false;
+	//g_display_is_valid = false;
 
-	display(version);
+	
 }
