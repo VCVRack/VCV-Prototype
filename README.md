@@ -11,6 +11,7 @@ Supported scripting languages:
 - JavaScript (ES2020) (.js)
 - [Lua](https://www.lua.org/) (.lua)
 - [Vult](https://github.com/modlfo/vult) (.vult)
+- [Pure Data](https://puredata.info) (.pd)
 - [Add your own below](#adding-a-script-engine)
 
 [Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
@@ -116,6 +117,23 @@ sudo apt install premake4
 sudo pacman -S premake
 ```
 
+## Build
+### Add path to Rack-SDK
+```bash
+export RACK_DIR=/set/path/to/Rack-SDK/
+```
+
+### load submodules
+```bash
+git submodule update --init --recursive
+```
+
+### Make
+```bash
+make dep
+make
+```
+
 ## Adding a script engine
 
 - Add your scripting language library to the build system so it builds with `make dep`, following the Duktape example in `Makefile`.
@@ -131,4 +149,5 @@ sudo pacman -S premake
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript, not used), LuaJIT (Lua), Python (in development)
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
+- [CHAIR](https://chair.audio) [Clemens Wegener (libpd), Max Neupert (patches)] : libpd
 - add your name here

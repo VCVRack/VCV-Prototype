@@ -14,21 +14,18 @@ DISTRIBUTABLES += $(wildcard LICENSE*)
 include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
-QUICKJS ?= 0
+QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
-<<<<<<< HEAD
 VULT ?= 1
+LIBPD ?= 1
 
 # Vult depends on both LuaJIT and QuickJS
 ifeq ($(VULT), 1)
 QUICKJS := 1
 LUAJIT := 1
 endif
-=======
-LIBPD ?= 1
->>>>>>> implements Makefile build flow
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -41,7 +38,7 @@ $(efsw):
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
-# LibPD
+# libpd
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
