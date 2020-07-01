@@ -11,6 +11,8 @@ using namespace rack;
 
 float g_lights[NUM_ROWS][3] = {};
 float g_switchLights[NUM_ROWS][3] = {};
+std::string g_utility[2] = {};
+bool g_display_is_valid = false;
 
 std::vector<std::string> split (const std::string &s, char delim) {
     std::vector<std::string> result;
@@ -52,6 +54,7 @@ struct LibPDEngine : ScriptEngine {
   	float _input[BUFFERSIZE] = {};//  = (float*)malloc(1024*2*sizeof(float));
   	const static std::map<std::string, int> _light_map;
   	const static std::map<std::string, int> _switchLight_map;
+  	const static std::map<std::string, int> _utility_map;
 
 	std::string getEngineName() override {
 		return "Pure Data";
@@ -131,6 +134,11 @@ struct LibPDEngine : ScriptEngine {
 				sendSwitch(i, block->switches[i]);
 			}
 		}
+
+		// display
+		if(g_display_is_valid){
+			display(g_utility[1]);
+		}
 		// process samples in libpd
 		_ticks = 1;
 		libpd_process_float(_ticks, _input, _output);
@@ -158,7 +166,7 @@ void LibPDEngine::receiveLights(const char *s) {
 	std::vector<std::string> atoms = split (str, ' ');
 
 	if(atoms[0]=="toVCV:"){
-		// light list
+		// parse lights list
 		bool light_is_valid = true;
 		int light_idx = -1;
 		try {
@@ -177,7 +185,7 @@ void LibPDEngine::receiveLights(const char *s) {
 		else {
 			// error
 		}
-
+		// parse switch lights list
 		bool switchLight_is_valid = true;
 		int switchLight_idx = -1;
 		try {
@@ -196,9 +204,34 @@ void LibPDEngine::receiveLights(const char *s) {
 		else {
 			// error
 		}
+
+		// parse switch lights list
+		bool utility_is_valid = true;
+		int utility_idx = -1;
+		try {
+				utility_idx = _utility_map.at(atoms[1]);      // map::at throws an out-of-range
+			}
+		catch (const std::out_of_range& oor) {
+			utility_is_valid = false;
+			//g_display_is_valid = true;
+			//display("Warning:"+atoms[1]+" not found!");
+		}
+		//std::cout << v[1] << ", " << g_led_map[v[1]] << std::endl;
+		if(utility_is_valid && atoms.size()>=3){
+			g_utility[0] = atoms[1]; // display
+			g_utility[1] = {""}; 
+			for(int i=0; i<atoms.size()-2; i++){
+				g_utility[1] += " " +atoms[i+2]; // concatenate message
+			}
+			g_display_is_valid = true;
+		}
+		else {
+			// error
+		}
 	}
 	else { 
-		// do nothing
+		// print out on command line
+		std::cout << std::string(s) << std::endl;
 	}
 }
 
@@ -238,14 +271,23 @@ const std::map<std::string, int> LibPDEngine::_switchLight_map{
  	{ "S6", 5 }
 };
 
+const std::map<std::string, int> LibPDEngine::_utility_map{
+	{ "display", 0 }
+};
+
+
 void LibPDEngine::sendKnob(const int idx, const float value){
 	std::string knob = "K"+std::to_string(idx+1);
-	libpd_float(knob.c_str(), value);
+	libpd_start_message(1);
+    libpd_add_float(value); 
+    libpd_finish_message("fromVCV", knob.c_str());
 }
 
 void LibPDEngine::sendSwitch(const int idx, const bool value){
 	std::string sw = "S"+std::to_string(idx+1);
-	libpd_float(sw.c_str(), value);
+	libpd_start_message(1);
+    libpd_add_float(value); 
+    libpd_finish_message("fromVCV", sw.c_str());
 }
 
 void LibPDEngine::sendInitialStates(const ProcessBlock* block){
