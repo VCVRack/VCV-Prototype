@@ -208,9 +208,8 @@ void LibPDEngine::receiveLights(const char *s) {
 
 		// parse switch lights list
 		bool utility_is_valid = true;
-		int utility_idx = -1;
 		try {
-				utility_idx = _utility_map.at(atoms[1]);      // map::at throws an out-of-range
+				_utility_map.at(atoms[1]);      // map::at throws an out-of-range
 			}
 		catch (const std::out_of_range& oor) {
 			utility_is_valid = false;
@@ -221,7 +220,7 @@ void LibPDEngine::receiveLights(const char *s) {
 		if(utility_is_valid && atoms.size()>=3){
 			g_utility[0] = atoms[1]; // display
 			g_utility[1] = {""}; 
-			for(int i=0; i<atoms.size()-2; i++){
+			for(unsigned i=0; i<atoms.size()-2; i++){
 				g_utility[1] += " " +atoms[i+2]; // concatenate message
 			}
 			g_display_is_valid = true;
@@ -300,6 +299,21 @@ void LibPDEngine::sendInitialStates(const ProcessBlock* block){
 	std::string version = "pd "+std::to_string(PD_MAJOR_VERSION)+"."+
 		std::to_string(PD_MINOR_VERSION)+"."
 		+std::to_string(PD_BUGFIX_VERSION);
+
+
+	for(int i=0; i<NUM_ROWS; i++){
+		g_lights[i][0] = 0;
+		g_lights[i][1] = 0;
+		g_lights[i][2] = 0;
+		g_switchLights[i][0] = 0;
+		g_switchLights[i][1] = 0;
+		g_switchLights[i][2] = 0;
+	}
+
+	g_utility[0] = "";
+	g_utility[1] = "";
+
+	g_display_is_valid = false;
 
 	display(version);
 }
