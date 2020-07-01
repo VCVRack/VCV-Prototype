@@ -138,6 +138,7 @@ struct LibPDEngine : ScriptEngine {
 		// display
 		if(g_display_is_valid){
 			display(g_utility[1]);
+			g_display_is_valid = false;
 		}
 		// process samples in libpd
 		_ticks = 1;
@@ -296,4 +297,9 @@ void LibPDEngine::sendInitialStates(const ProcessBlock* block){
 		sendKnob(i, block->knobs[i]);
 		sendSwitch(i, block->knobs[i]);
 	}
+	std::string version = "pd "+std::to_string(PD_MAJOR_VERSION)+"."+
+		std::to_string(PD_MINOR_VERSION)+"."
+		+std::to_string(PD_BUGFIX_VERSION);
+
+	display(version);
 }
