@@ -31,7 +31,7 @@ $(efsw):
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
-# LibPD
+# libpd
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
@@ -206,5 +206,16 @@ endif
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE)
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE) install
 
+# Vult
+ifeq ($(VULT), 1)
+SOURCES += src/VultEngine.cpp
+vult := dep/vult/vultc.h
+$(vult):
+	cd dep && mkdir -p vult
+	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.9/vultc.h"
+	$(SHA256) $(vult) 91f575afd2913d0879df90ee666021065ad726372f0bd306198024dc771cce55
+FLAGS += -Idep/vult
+DEPS += $(vult)
+endif
 
 include $(RACK_DIR)/plugin.mk
