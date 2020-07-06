@@ -1,0 +1,83 @@
+/*
+ Vult API documentation.
+
+ Author: Leonardo Laguna Ruiz - leonardo@vult-dsp.com
+
+ The main difference of the Vult API compared to the JavaScript and Lua is that all interactions
+ happen through functions rather than accessing to the block arrays.
+
+ A Vult script requires the following two functions:
+
+ fun process() { }
+ and update() { }
+
+ The 'process' function is called every audio sample. As inputs, it will receive the values from
+ the input jacks but normalized to 1.0. This means that a value of 10.0 V in VCV Rack is received
+ as 1.0. Similarly, when you return a value of 1.0 it will be output by the prototype as 10.0V.
+
+ You can use the input and output jacks by adding or removing arguments to the function. For example,
+ to pass all the inputs to the outputs you can declare the function as follows:
+
+ fun process(i1, i2, i3, i4, i5, i6) {
+     return i1, i2, i3, i4, i5, i6;
+ }
+
+ The 'update' function is called once every 32 samples. You can use this function to perform actions
+ that do not require audio rate speed e.g. setting light colors or displying characters in the screen.
+ The function 'update' do not takes or returns any value.
+
+ Important: Notice that the 'update' function is declared with the keyword 'and'. In Vult language,
+ this means that they share context. At the moment, declaring them differently could have an undefined
+ behavior.
+
+ To interact with knobs, switches, lights the following builtin functions are provided.
+ NOTE: the knobs, switches and lights are numbered from 1 to 6
+
+ getKnob(n:int) : real // value of the nth knob range: 0.0-1.0
+ getSwitch(n:int) : bool // value of the nth switch: true/false
+
+ setLight(n:int, r:real, g:real, b:real) // r, g, b range: 0.0-1.0
+ setSwitchLight(n:int, r:real, g:real, b:real) // r, g, b range: 0.0-1.0
+
+ samplerate() : real  // current sample rate
+ sampletime() : real  // current time step (1.0 / samplerate())
+ display(text:string) // display text in the screen
+
+ */
+
+
+// Returns the r,g,b values for a given voltage
+fun getRGB(v) {
+    if (v > 0.0)
+        return v, 0.0, 0.0;
+    else
+        return 0.0, -v, 0.0;
+}
+
+// Takes two inputs and returns the result of different operations on them
+fun process(in1, in2) {
+    // theses are declared as 'mem' so we can remember them  and use them in 'update'
+    mem sum = clip(in1 + in2, -1.0, 1.0); // use 'clip' to keep the signals in the specified range
+    mem sub = clip(in1 - in2, -1.0, 1.0);
+    mem mul = clip(in1 * in2, -1.0, 1.0);
+    return sum, sub, mul;
+}
+and update() {
+    _ = display("Add two LFO to IN1 and IN2");
+    val r, g, b;
+    // Set the light no 1 with the 'sum' value
+    r, g, b = getRGB(sum);
+    _ = setLight(1, r, g, b);
+    _ = setSwitchLight(1, r, g, b);
+
+    // Set the light no 2 with the 'sub' value
+    r, g, b = getRGB(sub);
+    _ = setLight(2, r, g, b);
+    _ = setSwitchLight(2, r, g, b);
+
+    // Set the light no 2 with the 'mul' value
+    r, g, b = getRGB(mul);
+    _ = setLight(3, r, g, b);
+    _ = setSwitchLight(3, r, g, b);
+
+}
