@@ -31,7 +31,7 @@ $(efsw):
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
-# libpd
+# LibPD
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
@@ -39,16 +39,23 @@ OBJECTS += $(libpd)
 DEPS += $(libpd)
 FLAGS += -Idep/include/libpd
 
+ifdef ARCH_WIN
+	FLAGS += -DPD_INTERNAL -D_WIN32
+	LDFLAGS += -shared -Wl,--export-all-symbols -lws2_32 -lkernel32 -static-libgcc
+endif
+
+
 $(libpd):
 	$(WGET) "https://github.com/chairaudio/libpd/archive/master.tar.gz"
-	#$(SHA256) master.tar.gz f8dd2ea21f295badeae1b2ea8d00a91135b24710e67d437f7f18719d728e6e04
+	$(SHA256) master.tar.gz 9edfd4a7423009a61069fb4b2fa027a62705ffa0dcf23bbb6c220f1c6e709d3d
 	cd dep && $(UNTAR) ../master.tar.gz
 	$(WGET) "https://github.com/pure-data/pure-data/archive/0.50-2.tar.gz"
-	#$(SHA256) 0.51-0.tar.gz 68b13342aaee70b8ef993eef11dc8d6837323dd6ea74a2f0705461d59f3ad2af
+	$(SHA256) 0.50-2.tar.gz 0bdc9503d25f71e05ce6d321dd853f4e8082fdea211a59439eddd8105cc8761e
 	cd dep/libpd-master/pure-data && $(UNTAR) ../../../0.50-2.tar.gz --strip-components=1
-	cd dep/libpd-master && make MULTI=true
+	cd dep/libpd-master && make MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
 	cd dep/libpd-master && $(MAKE) install prefix="$(DEP_PATH)"
 endif
+
 
 # Duktape
 ifeq ($(DUKTAPE), 1)
