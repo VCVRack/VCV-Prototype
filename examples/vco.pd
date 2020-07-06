@@ -1,14 +1,14 @@
 #N canvas 1290 443 439 466 12;
 #X obj 69 7 r fromVCV;
 #X obj 69 32 route K1;
-#X obj 16 345 osc~;
+#X obj 16 321 osc~;
 #X obj 101 370 print toVCV;
 #X msg 101 346 display Freq: \$1 Hz;
 #X obj 115 112 adc~ 1;
 #X obj 69 111 sig~;
 #X obj 120 201 loadbang;
 #X msg 120 226 1;
-#X obj 120 251 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+#X obj 120 251 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
 1;
 #X obj 120 272 metro 50;
 #X obj 101 297 snapshot~;
@@ -21,9 +21,10 @@
 #X obj 16 137 sig~ 2;
 #X obj 16 370 dac~ 1;
 #X text 145 162 <--- FM with CV signal from IN1;
+#X obj 15 346 *~ 5;
 #X connect 0 0 1 0;
 #X connect 1 0 14 0;
-#X connect 2 0 19 0;
+#X connect 2 0 21 0;
 #X connect 4 0 3 0;
 #X connect 5 0 13 1;
 #X connect 6 0 13 0;
@@ -40,3 +41,4 @@
 #X connect 16 0 11 0;
 #X connect 17 0 16 0;
 #X connect 18 0 17 0;
+#X connect 21 0 19 0;

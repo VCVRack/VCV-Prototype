@@ -153,7 +153,7 @@ struct LibPDEngine : ScriptEngine {
 		//return samples to prototype
 		for (int s = 0; s < _pd_block_size; s++) {
 		    for (int r = 0; r < rows; r++) {
-		    	block->outputs[r][s] = _output[s*rows+r] * 5;
+		    	block->outputs[r][s] = _output[s*rows+r]; // scale up again to +-5V signal
 		    	// there is a correction multilpier, because libpd's output is too quiet(?)
 		    }
 		  }
