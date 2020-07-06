@@ -14,11 +14,18 @@ DISTRIBUTABLES += $(wildcard LICENSE*)
 include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
-QUICKJS ?= 0
+QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
+VULT ?= 1
 LIBPD ?= 1
+
+# Vult depends on both LuaJIT and QuickJS
+ifeq ($(VULT), 1)
+QUICKJS := 1
+LUAJIT := 1
+endif
 
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
@@ -83,7 +90,6 @@ endif
 $(quickjs):
 	cd dep && git clone "https://github.com/JerrySievert/QuickJS.git"
 	cd dep/QuickJS && git checkout 807adc8ca9010502853d471bd8331cdc1d376b94
-	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) 
 	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
