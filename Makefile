@@ -4,8 +4,7 @@ FLAGS += -Idep/include
 CFLAGS +=
 CXXFLAGS +=
 
-LDFLAGS +=
-
+LDFLAGS += 
 SOURCES += src/Prototype.cpp
 
 DISTRIBUTABLES += res examples
@@ -14,8 +13,8 @@ DISTRIBUTABLES += $(wildcard LICENSE*)
 include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
-QUICKJS ?= 1
-LUAJIT ?= 1
+QUICKJS ?= 0
+LUAJIT ?= 0
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
 VULT ?= 1
@@ -212,7 +211,6 @@ FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
 
-
 # LibPD
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
@@ -248,5 +246,15 @@ endif
 	cd dep/libpd && $(MAKE) install prefix="$(DEP_PATH)"
 endif
 
+
+# Faust
+ifeq ($(FAUST), 1)
+SOURCES += src/FaustEngine.cpp
+FLAGS += -I/use/local/include
+LDFLAGS += -L/usr/local/lib -lfaust 
+DEPS += $(faust)
+OBJECTS += $(faust)
+FAUST_MAKE_FLAGS += prefix="$(DEP_PATH)"
+endif
 
 include $(RACK_DIR)/plugin.mk
