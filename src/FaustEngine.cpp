@@ -9,7 +9,7 @@ class FaustEngine : public ScriptEngine {
     
     public:
     
-        FaustEngine():fFactory(nullptr), fDSP(nullptr), fInputs(nullptr), fOutputs(nullptr)
+        FaustEngine():fDSPFactory(nullptr), fDSP(nullptr), fInputs(nullptr), fOutputs(nullptr)
         {}
     
         ~FaustEngine()
@@ -17,7 +17,7 @@ class FaustEngine : public ScriptEngine {
             delete [] fInputs;
             delete [] fOutputs;
             delete fDSP;
-            deleteDSPFactory(fFactory);
+            deleteDSPFactory(fDSPFactory);
         }
     
         std::string getEngineName() override
@@ -27,16 +27,32 @@ class FaustEngine : public ScriptEngine {
     
         int run(const std::string& path, const std::string& script) override
         {
+            std::string filename = path.substr(path.find_last_of("/"));
+        #if defined ARCH_MAC
+            std::string tempDir = "/private/var/tmp/";
+        #else
+            std::string tempDir = "";
+        #endif
             std::string error_msg;
-            fFactory = createDSPFactoryFromString("FaustDSP", script, 0, NULL, "", error_msg, -1);
-            if (!fFactory) {
-                display("ERROR: cannot create Faust factory !");
-                return -1;
-            } else {
-                display("Compiling factory finished");
+            
+            // Try to load the machine code cache
+            fDSPFactory = readDSPFactoryFromMachineFile(tempDir + filename, "", error_msg);
+            
+            if (!fDSPFactory) {
+                // Otherwise recompile the DSP
+                fDSPFactory = createDSPFactoryFromString("FaustDSP", script, 0, NULL, "", error_msg, -1);
+                if (!fDSPFactory) {
+                    display("ERROR: cannot create Faust factory !");
+                    return -1;
+                } else {
+                    // And save the cache
+                    display("Compiling factory finished");
+                    writeDSPFactoryToMachineFile(fDSPFactory, tempDir + filename, "");
+                }
             }
             
-            fDSP = fFactory->createDSPInstance();
+            // Create DSP
+            fDSP = fDSPFactory->createDSPInstance();
             if (!fDSP) {
                 display("ERROR: cannot create Faust instance !");
                 return -1;
@@ -44,7 +60,7 @@ class FaustEngine : public ScriptEngine {
                 display("Created DSP");
             }
             
-            // Prepare inputs/ouputs
+            // Prepare inputs/outputs
             if (fDSP->getNumInputs() > 6) {
                 display("ERROR: DSP has " + std::to_string(fDSP->getNumInputs()) + " inputs !");
                 return -1;
@@ -60,12 +76,13 @@ class FaustEngine : public ScriptEngine {
         
             // Prepare buffers for process
             ProcessBlock* block = getProcessBlock();
-            fInputs = new FAUSTFLOAT*[fDSP->getNumInputs()];
-            fOutputs = new FAUSTFLOAT*[fDSP->getNumOutputs()];
             
+            fInputs = new FAUSTFLOAT*[fDSP->getNumInputs()];
             for (int chan = 0; chan < fDSP->getNumInputs(); chan++) {
                 fInputs[chan] = block->inputs[chan];
             }
+            
+            fOutputs = new FAUSTFLOAT*[fDSP->getNumOutputs()];
             for (int chan = 0; chan < fDSP->getNumOutputs(); chan++) {
                 fOutputs[chan] = block->outputs[chan];
             }
@@ -86,7 +103,7 @@ class FaustEngine : public ScriptEngine {
         }
     
     private:
-        llvm_dsp_factory* fFactory;
+        llvm_dsp_factory* fDSPFactory;
         llvm_dsp* fDSP;
         FAUSTFLOAT** fInputs;
         FAUSTFLOAT** fOutputs;
