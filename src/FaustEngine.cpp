@@ -1,6 +1,8 @@
 #include "ScriptEngine.hpp"
 
 #include <faust/dsp/llvm-dsp.h>
+#include <faust/dsp/libfaust.h>
+
 #include <iostream>
 
 #define kBufferSize 64
@@ -27,34 +29,33 @@ class FaustEngine : public ScriptEngine {
     
         int run(const std::string& path, const std::string& script) override
         {
-            std::string filename = path.substr(path.find_last_of("/"));
         #if defined ARCH_MAC
-            std::string tempDir = "/private/var/tmp/";
+            std::string temp_cache = "/private/var/tmp/VCV_" + generateSHA1(script);
         #else
-            std::string tempDir = "";
+            std::string temp_cache = "" + generateSHA1(script);
         #endif
             std::string error_msg;
             
             // Try to load the machine code cache
-            fDSPFactory = readDSPFactoryFromMachineFile(tempDir + filename, "", error_msg);
+            fDSPFactory = readDSPFactoryFromMachineFile(temp_cache, "", error_msg);
             
             if (!fDSPFactory) {
                 // Otherwise recompile the DSP
                 fDSPFactory = createDSPFactoryFromString("FaustDSP", script, 0, NULL, "", error_msg, -1);
                 if (!fDSPFactory) {
-                    display("ERROR: cannot create Faust factory !");
+                    display("ERROR: cannot create factory !");
                     return -1;
                 } else {
                     // And save the cache
                     display("Compiling factory finished");
-                    writeDSPFactoryToMachineFile(fDSPFactory, tempDir + filename, "");
+                    writeDSPFactoryToMachineFile(fDSPFactory, temp_cache, "");
                 }
             }
             
             // Create DSP
             fDSP = fDSPFactory->createDSPInstance();
             if (!fDSP) {
-                display("ERROR: cannot create Faust instance !");
+                display("ERROR: cannot create instance !");
                 return -1;
             } else {
                 display("Created DSP");
