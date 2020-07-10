@@ -211,6 +211,7 @@ FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
 
+<<<<<<< HEAD
 # LibPD
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
@@ -248,6 +249,9 @@ endif
 
 
 # Faust
+=======
+# Faust: compile the libfaust dynamic library with 'make world && sudo make install'
+>>>>>>> Document Faust setup in Makefile.
 ifeq ($(FAUST), 1)
 SOURCES += src/FaustEngine.cpp
 FLAGS += -I/use/local/include
