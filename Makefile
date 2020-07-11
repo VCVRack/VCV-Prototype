@@ -19,6 +19,7 @@ LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
 VULT ?= 1
+LIBPD ?= 1
 
 # Vult depends on both LuaJIT and QuickJS
 ifeq ($(VULT), 1)
@@ -36,6 +37,32 @@ $(efsw):
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
+
+# LibPD
+ifeq ($(LIBPD), 1)
+libpd := dep/lib/libpd.a
+SOURCES += src/LibPDEngine.cpp
+OBJECTS += $(libpd)
+DEPS += $(libpd)
+FLAGS += -Idep/include/libpd
+
+ifdef ARCH_WIN
+	FLAGS += -DPD_INTERNAL -D_WIN32
+	LDFLAGS += -shared -Wl,--export-all-symbols -lws2_32 -lkernel32 -static-libgcc
+endif
+
+
+$(libpd):
+	$(WGET) "https://github.com/chairaudio/libpd/archive/master.tar.gz"
+	$(SHA256) master.tar.gz 9edfd4a7423009a61069fb4b2fa027a62705ffa0dcf23bbb6c220f1c6e709d3d
+	cd dep && $(UNTAR) ../master.tar.gz
+	$(WGET) "https://github.com/pure-data/pure-data/archive/0.50-2.tar.gz"
+	$(SHA256) 0.50-2.tar.gz 0bdc9503d25f71e05ce6d321dd853f4e8082fdea211a59439eddd8105cc8761e
+	cd dep/libpd-master/pure-data && $(UNTAR) ../../../0.50-2.tar.gz --strip-components=1
+	cd dep/libpd-master && make MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
+	cd dep/libpd-master && $(MAKE) install prefix="$(DEP_PATH)"
+endif
+
 
 # Duktape
 ifeq ($(DUKTAPE), 1)
@@ -63,7 +90,6 @@ endif
 $(quickjs):
 	cd dep && git clone "https://github.com/JerrySievert/QuickJS.git"
 	cd dep/QuickJS && git checkout 807adc8ca9010502853d471bd8331cdc1d376b94
-	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS)
 	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
