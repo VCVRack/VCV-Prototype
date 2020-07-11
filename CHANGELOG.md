@@ -1,3 +1,11 @@
+### 1.3.0 (in development)
+- Add libpd (Pure Data) engine.
+- Add Vult engine.
+- Add "New script" and "Edit script" menu items to make script creation easier.
+- Allow copying display message to clipboard.
+- Improve LuaJIT performance by enabling JIT compilation.
+- Add `bit` library to LuaJIT engine.
+
 ### 1.2.0 (2019-11-15)
 - Add Lua script engine.
 - Add security warning when loading script from patch or module preset.
