@@ -27,6 +27,7 @@ QUICKJS := 1
 LUAJIT := 1
 endif
 
+
 # Entropia File System Watcher
 efsw := dep/lib/libefsw-static-release.a
 DEPS += $(efsw)
@@ -37,31 +38,6 @@ $(efsw):
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
-
-# LibPD
-ifeq ($(LIBPD), 1)
-libpd := dep/lib/libpd.a
-SOURCES += src/LibPDEngine.cpp
-OBJECTS += $(libpd)
-DEPS += $(libpd)
-FLAGS += -Idep/include/libpd
-
-ifdef ARCH_WIN
-	FLAGS += -DPD_INTERNAL -D_WIN32
-	LDFLAGS += -shared -Wl,--export-all-symbols -lws2_32 -lkernel32 -static-libgcc
-endif
-
-
-$(libpd):
-	$(WGET) "https://github.com/chairaudio/libpd/archive/master.tar.gz"
-	$(SHA256) master.tar.gz 9edfd4a7423009a61069fb4b2fa027a62705ffa0dcf23bbb6c220f1c6e709d3d
-	cd dep && $(UNTAR) ../master.tar.gz
-	$(WGET) "https://github.com/pure-data/pure-data/archive/0.50-2.tar.gz"
-	$(SHA256) 0.50-2.tar.gz 0bdc9503d25f71e05ce6d321dd853f4e8082fdea211a59439eddd8105cc8761e
-	cd dep/libpd-master/pure-data && $(UNTAR) ../../../0.50-2.tar.gz --strip-components=1
-	cd dep/libpd-master && make MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
-	cd dep/libpd-master && $(MAKE) install prefix="$(DEP_PATH)"
-endif
 
 
 # Duktape
@@ -76,6 +52,7 @@ $(duktape):
 	$(SHA256) duktape-2.4.0.tar.xz 86a89307d1633b5cedb2c6e56dc86e92679fc34b05be551722d8cc69ab0771fc
 	cd dep && $(UNTAR) ../duktape-2.4.0.tar.xz
 endif
+
 
 # QuickJS
 ifeq ($(QUICKJS), 1)
@@ -93,6 +70,7 @@ $(quickjs):
 	cd dep/QuickJS && $(MAKE) $(QUICKJS_MAKE_FLAGS) install
 endif
 
+
 # LuaJIT
 ifeq ($(LUAJIT), 1)
 SOURCES += src/LuaJITEngine.cpp
@@ -105,6 +83,7 @@ $(luajit):
 	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
 	cd dep/LuaJIT-2.0.5 && $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
 endif
+
 
 # SuperCollider
 ifeq ($(SUPERCOLLIDER), 1)
@@ -150,6 +129,7 @@ $(supercollider):
 	cd dep/supercollider/build && $(MAKE) generate_libsclang_link_line
 # 	cd dep/supercollider/build && $(MAKE) install
 endif
+
 
 # Python
 ifeq ($(PYTHON), 1)
@@ -219,6 +199,7 @@ endif
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE)
 # 	cd dep/llvm-8.0.1.src/build && $(MAKE) install
 
+
 # Vult
 ifeq ($(VULT), 1)
 SOURCES += src/VultEngine.cpp
@@ -230,5 +211,28 @@ $(vult):
 FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
+
+
+# LibPD
+ifeq ($(LIBPD), 1)
+libpd := dep/lib/libpd.a
+SOURCES += src/LibPDEngine.cpp
+OBJECTS += $(libpd)
+DEPS += $(libpd)
+FLAGS += -Idep/include/libpd
+
+ifdef ARCH_WIN
+	FLAGS += -DPD_INTERNAL -D_WIN32
+	LDFLAGS += -shared -Wl,--export-all-symbols -lws2_32 -lkernel32 -static-libgcc
+endif
+
+$(libpd):
+	cd dep && git clone "https://github.com/chairaudio/libpd.git" --recursive
+	cd dep/libpd && git checkout fe1a0d08979efd5fc46590108845b235cb824634
+
+	cd dep/libpd && $(MAKE) MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
+	cd dep/libpd && $(MAKE) install prefix="$(DEP_PATH)"
+endif
+
 
 include $(RACK_DIR)/plugin.mk
