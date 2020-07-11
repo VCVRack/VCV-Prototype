@@ -129,7 +129,7 @@ struct Prototype : Module {
 	efsw_watcher efsw = NULL;
 
 	/** Script that has not yet been approved to load */
-	std::string securityScript;
+	std::string unsecureScript;
 	bool securityRequested = false;
 	bool securityAccepted = false;
 
@@ -159,9 +159,9 @@ struct Prototype : Module {
 
 	void process(const ProcessArgs& args) override {
 		// Load security-sandboxed script if the security warning message is accepted.
-		if (securityScript != "" && securityAccepted) {
-			setScript(securityScript);
-			securityScript = "";
+		if (unsecureScript != "" && securityAccepted) {
+			setScript(unsecureScript);
+			unsecureScript = "";
 		}
 
 		// Frame divider for reducing sample rate
@@ -336,7 +336,7 @@ struct Prototype : Module {
 		std::string script = this->script;
 		// If we haven't accepted the security of this script, serialize the security-sandboxed script anyway.
 		if (script == "")
-			script = securityScript;
+			script = unsecureScript;
 		json_object_set_new(rootJ, "script", json_stringn(script.data(), script.size()));
 
 		return rootJ;
@@ -359,7 +359,7 @@ struct Prototype : Module {
 					// Request security warning message
 					securityAccepted = false;
 					securityRequested = true;
-					securityScript = script;
+					unsecureScript = script;
 				}
 			}
 		}
