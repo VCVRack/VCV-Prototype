@@ -1,10 +1,6 @@
-#N canvas 698 144 821 731 12;
-#X obj 32 367 print toVCV;
+#N canvas 2149 174 821 731 12;
 #X obj 32 448 dac~ 1 2 3 4 5 6;
 #X obj 32 401 adc~ 1 2 3 4 5 6;
-#X text 158 401 audio from VCVRack;
-#X text 158 448 audio to VCVRack;
-#X obj 36 25 r fromVCV;
 #X obj 36 62 route K1 K2 K3 K4 K5 K6;
 #X obj 194 106 route S1 S2 S3 S4 S5 S6;
 #X text 214 60 knobs;
@@ -21,24 +17,28 @@
 #X obj 211 240 t b f;
 #X obj 253 241 t b f;
 #X obj 201 161 vsl 15 50 0 1 0 0 empty empty empty 0 -9 0 10 -258113
--1 -1 0 1;
+-1 -1 2450 1;
 #X obj 216 161 vsl 15 50 0 1 0 0 empty empty empty 0 -9 0 10 -4034
 -1 -1 0 1;
 #X obj 231 161 vsl 15 50 0 1 0 0 empty empty empty 0 -9 0 10 -4160
--1 -1 0 1;
-#X connect 5 0 6 0;
-#X connect 6 6 7 0;
-#X connect 10 0 0 0;
-#X connect 11 0 0 0;
+-1 -1 4410 1;
+#X obj 32 367 print toPrototype;
+#X obj 36 25 r fromPrototype;
+#X text 158 401 audio from VCV Prototype;
+#X text 158 448 audio to VCV Prototype;
+#X connect 2 6 3 0;
+#X connect 6 0 18 0;
+#X connect 7 0 18 0;
+#X connect 8 0 7 0;
+#X connect 9 0 18 0;
+#X connect 10 0 9 0;
+#X connect 11 0 18 0;
 #X connect 12 0 11 0;
-#X connect 13 0 0 0;
-#X connect 14 0 13 0;
-#X connect 15 0 0 0;
-#X connect 16 0 15 0;
-#X connect 17 0 16 0;
-#X connect 17 1 16 1;
-#X connect 18 0 16 0;
-#X connect 18 1 16 2;
-#X connect 19 0 16 0;
-#X connect 20 0 17 0;
-#X connect 21 0 18 0;
+#X connect 13 0 12 0;
+#X connect 13 1 12 1;
+#X connect 14 0 12 0;
+#X connect 14 1 12 2;
+#X connect 15 0 12 0;
+#X connect 16 0 13 0;
+#X connect 17 0 14 0;
+#X connect 19 0 2 0;
