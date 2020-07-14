@@ -7,6 +7,9 @@
 #include <mutex>
 #include "ScriptEngine.hpp"
 #include <efsw/efsw.h>
+#if defined ARCH_WIN
+	#include <windows.h>
+#endif
 
 
 using namespace rack;
@@ -88,7 +91,9 @@ void setEditorDialog() {
 	if (!editorPathC)
 		return;
 
-	editorPath = editorPathC;
+	editorPath = "\"";
+	editorPath += editorPathC;
+	editorPath += "\"";
 	settingsSave();
 	std::free(editorPathC);
 }
@@ -462,9 +467,20 @@ struct Prototype : Module {
 			return;
 		if (path.empty())
 			return;
-		// TODO Check on Mac/Windows
-		std::string command = "\"" + editorPath + "\" \"" + path + "\" &";
+		// Launch editor and detach
+		std::string command = editorPath + " \"" + path + "\"";
+#if defined ARCH_LIN || defined ARCH_MAC
+		command += " &";
 		std::system(command.c_str());
+#elif defined ARCH_WIN
+		std::wstring commandW = string::toWstring(command);
+		STARTUPINFOW startupInfo;
+		std::memset(&startupInfo, 0, sizeof(startupInfo));
+		startupInfo.cb = sizeof(startupInfo);
+		PROCESS_INFORMATION processInfo;
+		// Use the non-const [] accessor for commandW. Since C++11, it is null-terminated.
+		CreateProcessW(NULL, &commandW[0], NULL, NULL, false, 0, NULL, NULL, &startupInfo, &processInfo);
+#endif
 	}
 
 	void setClipboardMessage() {
