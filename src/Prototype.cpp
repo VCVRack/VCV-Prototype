@@ -28,14 +28,14 @@ ScriptEngine* createScriptEngine(std::string extension) {
 static std::string editorPath;
 
 
-json_t *settingsToJson() {
-	json_t *rootJ = json_object();
+json_t* settingsToJson() {
+	json_t* rootJ = json_object();
 	json_object_set_new(rootJ, "editorPath", json_string(editorPath.c_str()));
 	return rootJ;
 }
 
-void settingsFromJson(json_t *rootJ) {
-	json_t *editorPathJ = json_object_get(rootJ, "editorPath");
+void settingsFromJson(json_t* rootJ) {
+	json_t* editorPathJ = json_object_get(rootJ, "editorPath");
 	if (editorPathJ)
 		editorPath = json_string_value(editorPathJ);
 }
@@ -43,7 +43,7 @@ void settingsFromJson(json_t *rootJ) {
 void settingsLoad() {
 	// Load plugin settings
 	std::string filename = asset::user("VCV-Prototype.json");
-	FILE *file = std::fopen(filename.c_str(), "r");
+	FILE* file = std::fopen(filename.c_str(), "r");
 	if (!file) {
 		return;
 	}
@@ -52,7 +52,7 @@ void settingsLoad() {
 	});
 
 	json_error_t error;
-	json_t *rootJ = json_loadf(file, 0, &error);
+	json_t* rootJ = json_loadf(file, 0, &error);
 	if (rootJ) {
 		settingsFromJson(rootJ);
 		json_decref(rootJ);
@@ -60,10 +60,10 @@ void settingsLoad() {
 }
 
 void settingsSave() {
-	json_t *rootJ = settingsToJson();
+	json_t* rootJ = settingsToJson();
 
 	std::string filename = asset::user("VCV-Prototype.json");
-	FILE *file = std::fopen(filename.c_str(), "w");
+	FILE* file = std::fopen(filename.c_str(), "w");
 	if (file) {
 		json_dumpf(rootJ, file, JSON_INDENT(2) | JSON_REAL_PRECISION(9));
 		std::fclose(file);
