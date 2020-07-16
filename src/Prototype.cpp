@@ -468,11 +468,14 @@ struct Prototype : Module {
 		if (path.empty())
 			return;
 		// Launch editor and detach
-		std::string command = editorPath + " \"" + path + "\"";
-#if defined ARCH_LIN || defined ARCH_MAC
-		command += " &";
+#if defined ARCH_LIN
+		std::string command = editorPath + " \"" + path + "\" &";
+		std::system(command.c_str());
+#elif defined ARCH_MAC
+		std::string command = "open -a " + editorPath + " \"" + path + "\" &";
 		std::system(command.c_str());
 #elif defined ARCH_WIN
+		std::string command = editorPath + " \"" + path + "\"";
 		std::wstring commandW = string::toWstring(command);
 		STARTUPINFOW startupInfo;
 		std::memset(&startupInfo, 0, sizeof(startupInfo));
@@ -536,7 +539,7 @@ struct Prototype : Module {
 		};
 		EditScriptItem* editScriptItem = createMenuItem<EditScriptItem>("Edit script");
 		editScriptItem->module = this;
-		editScriptItem->disabled = !doesPathExist();
+		editScriptItem->disabled = !doesPathExist() || editorPath == "";
 		menu->addChild(editScriptItem);
 
 		struct SetEditorItem : MenuItem {
