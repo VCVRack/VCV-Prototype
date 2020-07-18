@@ -163,7 +163,7 @@ void LibPDEngine::receiveLights(const char* s) {
 	std::string str = std::string(s);
 	std::vector<std::string> atoms = split(str, ' ');
 
-	if (atoms[0] == "toPrototype:") {
+	if (atoms[0] == "toRack:") {
 		// parse lights list
 		bool light_is_valid = true;
 		int light_idx = -1;
@@ -277,14 +277,14 @@ void LibPDEngine::sendKnob(const int idx, const float value) {
 	std::string knob = "K" + std::to_string(idx + 1);
 	libpd_start_message(1);
 	libpd_add_float(value);
-	libpd_finish_message("fromPrototype", knob.c_str());
+	libpd_finish_message("fromRack", knob.c_str());
 }
 
 void LibPDEngine::sendSwitch(const int idx, const bool value) {
 	std::string sw = "S" + std::to_string(idx + 1);
 	libpd_start_message(1);
 	libpd_add_float(value);
-	libpd_finish_message("fromPrototype", sw.c_str());
+	libpd_finish_message("fromRack", sw.c_str());
 }
 
 void LibPDEngine::sendInitialStates(const ProcessBlock* block) {
