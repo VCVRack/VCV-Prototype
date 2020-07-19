@@ -16,9 +16,9 @@ gate = button("gate [switch:1]");
 
 // Using bargraph to control leds (from 1 to 6 with 3 colors)
 
-led_1_r = vbargraph("[led_red:1]", 0, 1);
-led_1_g = vbargraph("[led_green:1]", 0, 1);
-led_1_b = vbargraph("[led_blue:1]", 0, 1);
+light_1_r = vbargraph("[light_red:1]", 0, 1);
+light_1_g = vbargraph("[light_green:1]", 0, 1);
+light_1_b = vbargraph("[light_blue:1]", 0, 1);
 
 // Using bargraph to control switch leds (from 1 to 6 with 3 colors)
 
@@ -28,5 +28,5 @@ switch_2_b = vbargraph("[switch_blue:2]", 0, 1);
 
 process = os.osc(freq1) * vol1, 
 	os.sawtooth(freq2) * vol2 * gate,
-	(os.osc(1):led_1_r + os.osc(1.4):led_1_g + os.osc(1.7):led_1_b),
+	(os.osc(1):light_1_r + os.osc(1.4):light_1_g + os.osc(1.7):light_1_b),
 	(os.osc(1):switch_2_r + os.osc(1.2):switch_2_g + os.osc(1.7):switch_2_b);
