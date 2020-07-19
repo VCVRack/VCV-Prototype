@@ -114,11 +114,11 @@ struct RackUI : public GenericUI
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->lights[index-1][1] = *zone; });
         } else if ((fKey == "light_blue") && (index != -1)) {
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->lights[index-1][2] = *zone; });
-        } else if ((fKey == "switch_red") && (index != -1)) {
+        } else if ((fKey == "switchlight_red") && (index != -1)) {
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][0] = *zone; });
-        } else if ((fKey == "switch_green") && (index != -1)) {
+        } else if ((fKey == "switchlight_green") && (index != -1)) {
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][1] = *zone; });
-        } else if ((fKey == "switch_blue") && (index != -1)) {
+        } else if ((fKey == "switchlight_blue") && (index != -1)) {
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][2] = *zone; });
         }
     }
@@ -134,7 +134,7 @@ struct RackUI : public GenericUI
         
     void declare(FAUSTFLOAT* zone, const char* key, const char* val)
     {
-        static vector<string> keys = {"switch", "knob", "light_red", "light_green", "light_blue", "switch_red", "switch_green", "switch_blue"};
+        static vector<string> keys = {"switch", "knob", "light_red", "light_green", "light_blue", "switchlight_red", "switchlight_green", "switchlight_blue"};
         if (find(keys.begin(), keys.end(), key) != keys.end()) {
             fKey = key;
             fValue = val;
