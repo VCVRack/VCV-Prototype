@@ -29,6 +29,9 @@
 #include <faust/gui/ValueConverter.h>
 
 #include <iostream>
+#include <memory>
+
+using namespace std;
 
 #define kBufferSize 64
 
@@ -37,87 +40,42 @@ extern rack::Plugin* pluginInstance;
 // UI handler for switches, knobs and leds
 struct RackUI : public GenericUI
 {
-    // 0|1 switches
-    FAUSTFLOAT* fSwitches[NUM_ROWS];
+    typedef function<void(ProcessBlock* block)> updateFunction;
     
-    // Knobs with [0..1] <==> [min..max] mapping and medata 'scale' handling
-    ConverterZoneControl* fKnobs[NUM_ROWS];
+    vector<ConverterZoneControl*> fConverters;
+    vector<updateFunction> fUpdateFunIn;
+    vector<updateFunction> fUpdateFunOut;
+    string fKey, fValue, fScale;
     
-    // Leds
-    FAUSTFLOAT* fLedRed[NUM_ROWS];
-    FAUSTFLOAT* fLedGreen[NUM_ROWS];
-    FAUSTFLOAT* fLedBlue[NUM_ROWS];
-    
-    // Switch Leds
-    FAUSTFLOAT* fSwitchRed[NUM_ROWS];
-    FAUSTFLOAT* fSwitchGreen[NUM_ROWS];
-    FAUSTFLOAT* fSwitchBlue[NUM_ROWS];
-    
-    std::string fKey, fValue, fScale;
-    
-    void addItem(FAUSTFLOAT* table[NUM_ROWS], FAUSTFLOAT* zone, const std::string& value)
+    int getIndex(const string& value)
     {
         try {
-            int index = std::stoi(value);
+            int index = stoi(value);
             if (index >= 0 && index <= NUM_ROWS) {
-                table[index-1] = zone;
+                return index;
             } else {
-                std::cerr << "ERROR : incorrect '" << index << "' value !\n";
+                cerr << "ERROR : incorrect '" << index << "' value !\n";
+                return -1;
             }
-        } catch (std::invalid_argument& e) {
-            std::cerr << "ERROR : " << e.what() << std::endl;
-        }
-        fValue = fKey = fScale = "";
-    }
-    
-    void addItemConverter(ConverterZoneControl* table[NUM_ROWS], FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max, const std::string& value)
-    {
-        try {
-            int index = std::stoi(value);
-            if (index >= 0 && index <= NUM_ROWS) {
-                // Select appropriate converter according to scale mode
-                if (fScale == "log") {
-                    table[index-1] = new ConverterZoneControl(zone, new LogValueConverter(0., 1., min, max));
-                } else if (fScale == "exp") {
-                    table[index-1] = new ConverterZoneControl(zone, new ExpValueConverter(0., 1., min, max));
-                } else {
-                    table[index-1] = new ConverterZoneControl(zone, new LinearValueConverter(0., 1., min, max));
-                }
-            } else {
-                std::cerr << "ERROR : incorrect '" << index << "' value !\n";
-            }
-        } catch (std::invalid_argument& e) {
-            std::cerr << "ERROR : " << e.what() << std::endl;
-        }
-        fValue = fKey = fScale = "";
-    }
-    
-    RackUI()
-    {
-        fScale = "lin";
-        for (int i = 0; i < NUM_ROWS; i++) {
-            fSwitches[i] = nullptr;
-            fKnobs[i] = nullptr;
-            fLedRed[i] = nullptr;
-            fLedGreen[i] = nullptr;
-            fLedBlue[i] = nullptr;
-            fSwitchRed[i] = nullptr;
-            fSwitchGreen[i] = nullptr;
-            fSwitchBlue[i] = nullptr;
+        } catch (invalid_argument& e) {
+            cerr << "ERROR : " << e.what() << endl;
+            return -1;
         }
     }
+   
+    RackUI():fScale("lin")
+    {}
     
     virtual ~RackUI()
     {
-        for (int i = 0; i < NUM_ROWS; i++) {
-            delete fKnobs[i];
-        }
+        for (auto& it : fConverters) delete it;
     }
     
     void addButton(const char* label, FAUSTFLOAT* zone)
     {
-        if (fKey == "switch") {
-            addItem(fSwitches, zone, fValue);
+        int index = getIndex(fValue);
+        if (fKey == "switch" && (index != -1)) {
+            fUpdateFunIn.push_back([=] (ProcessBlock* block) { *zone = block->switches[index-1]; });
         }
     }
   
@@ -129,27 +87,39 @@ struct RackUI : public GenericUI
     {
         addNumEntry(label, zone, init, min, max, step);
     }
+    
     void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
     {
-        if (fKey == "knob") {
-            addItemConverter(fKnobs, zone, min, max, fValue);
+        int index = getIndex(fValue);
+        if (fKey == "knob" && (index != -1)) {
+            ConverterZoneControl* converter;
+            if (fScale == "log") {
+                converter = new ConverterZoneControl(zone, new LogValueConverter(0., 1., min, max));
+            } else if (fScale == "exp") {
+                converter = new ConverterZoneControl(zone, new ExpValueConverter(0., 1., min, max));
+            } else {
+                converter = new ConverterZoneControl(zone, new LinearValueConverter(0., 1., min, max));
+            }
+            fUpdateFunIn.push_back([=] (ProcessBlock* block) { converter->update(block->knobs[index-1]); });
+            fConverters.push_back(converter);
         }
     }
     
     void addBarGraph(FAUSTFLOAT* zone)
     {
-        if (fKey == "led_red") {
-            addItem(fLedRed, zone, fValue);
-        } else if (fKey == "led_green") {
-            addItem(fLedGreen, zone, fValue);
-        } else if (fKey == "led_blue") {
-            addItem(fLedBlue, zone, fValue);
-        } else if (fKey == "switch_red") {
-            addItem(fSwitchRed, zone, fValue);
-        } else if (fKey == "switch_green") {
-            addItem(fSwitchGreen, zone, fValue);
-        } else if (fKey == "switch_blue") {
-            addItem(fSwitchBlue, zone, fValue);
+        int index = getIndex(fValue);
+        if ((fKey == "led_red") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->lights[index-1][0] = *zone; });
+        } else if ((fKey == "led_green") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->lights[index-1][1] = *zone; });
+        } else if ((fKey == "led_blue") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->lights[index-1][2] = *zone; });
+        } else if ((fKey == "switch_red") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][0] = *zone; });
+        } else if ((fKey == "switch_green") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][1] = *zone; });
+        } else if ((fKey == "switch_blue") && (index != -1)) {
+            fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][2] = *zone; });
         }
     }
     
@@ -164,17 +134,11 @@ struct RackUI : public GenericUI
         
     void declare(FAUSTFLOAT* zone, const char* key, const char* val)
     {
-        if ((std::string(key) == "switch")
-            || (std::string(key) == "knob")
-            || (std::string(key) == "led_red")
-            || (std::string(key) == "led_green")
-            || (std::string(key) == "led_blue")
-            || (std::string(key) == "switch_red")
-            || (std::string(key) == "switch_green")
-            || (std::string(key) == "switch_blue")) {
+        static vector<string> keys = {"switch", "knob", "led_red", "led_green", "led_blue", "switch_red", "switch_green", "switch_blue"};
+        if (find(keys.begin(), keys.end(), key) != keys.end()) {
             fKey = key;
             fValue = val;
-        } else if (std::string(key) == "scale") {
+        } else if (string(key) == "scale") {
             fScale = val;
         }
     }
@@ -202,19 +166,19 @@ class FaustEngine : public ScriptEngine {
             deleteDSPFactory(fDSPFactory);
         }
     
-        std::string getEngineName() override
+        string getEngineName() override
         {
             return "Faust";
         }
     
-        int run(const std::string& path, const std::string& script) override
+        int run(const string& path, const string& script) override
         {
         #if defined ARCH_MAC
-            std::string temp_cache = "/private/var/tmp/VCV_" + generateSHA1(script);
+            string temp_cache = "/private/var/tmp/VCV_" + generateSHA1(script);
         #else
-            std::string temp_cache = "" + generateSHA1(script);
+            string temp_cache = "" + generateSHA1(script);
         #endif
-            std::string error_msg;
+            string error_msg;
             
             // Try to load the machine code cache
             fDSPFactory = readDSPFactoryFromMachineFile(temp_cache, "", error_msg);
@@ -250,12 +214,12 @@ class FaustEngine : public ScriptEngine {
             
             // Prepare inputs/outputs
             if (fDSP->getNumInputs() > NUM_ROWS) {
-                display("ERROR: DSP has " + std::to_string(fDSP->getNumInputs()) + " inputs !");
+                display("ERROR: DSP has " + to_string(fDSP->getNumInputs()) + " inputs !");
                 return -1;
             }
             
             if (fDSP->getNumOutputs() > NUM_ROWS) {
-                display("ERROR: DSP has " + std::to_string(fDSP->getNumInputs()) + " outputs !");
+                display("ERROR: DSP has " + to_string(fDSP->getNumInputs()) + " outputs !");
                 return -1;
             }
             
@@ -293,39 +257,13 @@ class FaustEngine : public ScriptEngine {
             }
             
             // Update inputs controllers
-            for (int i = 0; i < NUM_ROWS; i++) {
-                if (fRackUI.fSwitches[i]) {
-                    *fRackUI.fSwitches[i] = block->switches[i];
-                }
-                if (fRackUI.fKnobs[i]) {
-                    fRackUI.fKnobs[i]->update(block->knobs[i]);
-                }
-            }
+            for (auto& it : fRackUI.fUpdateFunIn) it(block);
             
             // Compute samples
-            fDSP->compute(kBufferSize, fInputs, fOutputs);
+            fDSP->compute(block->bufferSize, fInputs, fOutputs);
             
             // Update output controllers
-            for (int i = 0; i < NUM_ROWS; i++) {
-                if (fRackUI.fLedRed[i]) {
-                    block->lights[i][0] = *fRackUI.fLedRed[i];
-                }
-                if (fRackUI.fLedGreen[i]) {
-                    block->lights[i][1] = *fRackUI.fLedGreen[i];
-                }
-                if (fRackUI.fLedBlue[i]) {
-                    block->lights[i][2] = *fRackUI.fLedBlue[i];
-                }
-                if (fRackUI.fSwitchRed[i]) {
-                    block->switchLights[i][0] = *fRackUI.fSwitchRed[i];
-                }
-                if (fRackUI.fSwitchGreen[i]) {
-                    block->switchLights[i][1] = *fRackUI.fSwitchGreen[i];
-                }
-                if (fRackUI.fSwitchBlue[i]) {
-                    block->switchLights[i][2] = *fRackUI.fSwitchBlue[i];
-                }
-            }
+            for (auto& it : fRackUI.fUpdateFunOut) it(block);
             
             return 0;
         }
@@ -336,7 +274,7 @@ class FaustEngine : public ScriptEngine {
         FAUSTFLOAT** fInputs;
         FAUSTFLOAT** fOutputs;
         RackUI fRackUI;
-        std::string fDSPLibraries;
+        string fDSPLibraries;
 };
 
 __attribute__((constructor(1000)))
