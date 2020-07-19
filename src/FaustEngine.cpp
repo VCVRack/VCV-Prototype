@@ -37,11 +37,21 @@ extern rack::Plugin* pluginInstance;
 // UI handler for switches, knobs and leds
 struct RackUI : public GenericUI
 {
+    // 0|1 switches
     FAUSTFLOAT* fSwitches[NUM_ROWS];
+    
+    // Knobs with [0..1] <==> [min..max] mapping and medata 'scale' handling
     ConverterZoneControl* fKnobs[NUM_ROWS];
+    
+    // Leds
     FAUSTFLOAT* fLedRed[NUM_ROWS];
     FAUSTFLOAT* fLedGreen[NUM_ROWS];
     FAUSTFLOAT* fLedBlue[NUM_ROWS];
+    
+    // Switch Leds
+    FAUSTFLOAT* fSwitchRed[NUM_ROWS];
+    FAUSTFLOAT* fSwitchGreen[NUM_ROWS];
+    FAUSTFLOAT* fSwitchBlue[NUM_ROWS];
     
     std::string fKey, fValue, fScale;
     
@@ -91,6 +101,9 @@ struct RackUI : public GenericUI
             fLedRed[i] = nullptr;
             fLedGreen[i] = nullptr;
             fLedBlue[i] = nullptr;
+            fSwitchRed[i] = nullptr;
+            fSwitchGreen[i] = nullptr;
+            fSwitchBlue[i] = nullptr;
         }
     }
     
@@ -131,6 +144,12 @@ struct RackUI : public GenericUI
             addItem(fLedGreen, zone, fValue);
         } else if (fKey == "led_blue") {
             addItem(fLedBlue, zone, fValue);
+        } else if (fKey == "switch_red") {
+            addItem(fSwitchRed, zone, fValue);
+        } else if (fKey == "switch_green") {
+            addItem(fSwitchGreen, zone, fValue);
+        } else if (fKey == "switch_blue") {
+            addItem(fSwitchBlue, zone, fValue);
         }
     }
     
@@ -149,7 +168,10 @@ struct RackUI : public GenericUI
             || (std::string(key) == "knob")
             || (std::string(key) == "led_red")
             || (std::string(key) == "led_green")
-            || (std::string(key) == "led_blue")) {
+            || (std::string(key) == "led_blue")
+            || (std::string(key) == "switch_red")
+            || (std::string(key) == "switch_green")
+            || (std::string(key) == "switch_blue")) {
             fKey = key;
             fValue = val;
         } else if (std::string(key) == "scale") {
@@ -208,7 +230,7 @@ class FaustEngine : public ScriptEngine {
                 fDSPFactory = createDSPFactoryFromString("FaustDSP", script, argc, argv, "", error_msg, -1);
                 if (!fDSPFactory) {
                     display("ERROR : cannot create factory !");
-                    std::cerr << error_msg;
+                    WARN("Faust Prototype : %s", error_msg.c_str());
                     return -1;
                 } else {
                     // And save the cache
@@ -293,6 +315,15 @@ class FaustEngine : public ScriptEngine {
                 }
                 if (fRackUI.fLedBlue[i]) {
                     block->lights[i][2] = *fRackUI.fLedBlue[i];
+                }
+                if (fRackUI.fSwitchRed[i]) {
+                    block->switchLights[i][0] = *fRackUI.fSwitchRed[i];
+                }
+                if (fRackUI.fSwitchGreen[i]) {
+                    block->switchLights[i][1] = *fRackUI.fSwitchGreen[i];
+                }
+                if (fRackUI.fSwitchBlue[i]) {
+                    block->switchLights[i][2] = *fRackUI.fSwitchBlue[i];
                 }
             }
             
