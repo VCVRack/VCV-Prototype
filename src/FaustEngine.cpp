@@ -247,7 +247,7 @@ class FaustEngine : public ScriptEngine {
                 display("Created DSP");
             }
             
-            // Prepare inputs/outputs
+            // Check inputs/outputs
             if (fDSP->getNumInputs() > NUM_ROWS) {
                 display("ERROR: DSP has " + to_string(fDSP->getNumInputs()) + " inputs !");
                 return -1;
@@ -258,12 +258,6 @@ class FaustEngine : public ScriptEngine {
                 return -1;
             }
             
-            // Setup UI
-            fDSP->buildUserInterface(&fRackUI);
-            
-            setFrameDivider(1);
-            setBufferSize(kBufferSize);
-        
             // Prepare buffers for process
             ProcessBlock* block = getProcessBlock();
             
@@ -277,6 +271,12 @@ class FaustEngine : public ScriptEngine {
                 fOutputs[chan] = block->outputs[chan];
             }
             
+            // Setup UI
+            fDSP->buildUserInterface(&fRackUI);
+            
+            setFrameDivider(1);
+            setBufferSize(kBufferSize);
+        
             // Init DSP with default SR
             fDSP->init(44100);
             return 0;
