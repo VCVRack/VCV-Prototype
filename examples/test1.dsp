@@ -17,6 +17,10 @@ freq2 = hslider("freq2 [knob:4] [unit:Hz] ", 300, 200, 300, 1);
 
 gate = button("gate [switch:1]");
 
+// Checkbox can be used, the switch button will go be white when checked
+
+check = checkbox("check [switch:2]");
+
 // Using bargraph to control lights ([light_red|green|blue:::N] metadata with :N from 1 to 6, to control 3 colors)
 
 light_1_r = vbargraph("[light_red:1]", 0, 1);
@@ -25,11 +29,12 @@ light_1_b = vbargraph("[light_blue:1]", 0, 1);
 
 // Using bargraph to control switchlights ([switchlight_red|green|blue:::N] metadata with :N from 1 to 6, to control 3 colors)
 
-swl_2_r = vbargraph("[switchlight_red:2]", 0, 1);
-swl_2_g = vbargraph("[switchlight_green:2]", 0, 1);
-swl_2_b = vbargraph("[switchlight_blue:2]", 0, 1);
+swl_2_r = vbargraph("[switchlight_red:3]", 0, 1);
+swl_2_g = vbargraph("[switchlight_green:3]", 0, 1);
+swl_2_b = vbargraph("[switchlight_blue:3]", 0, 1);
 
 process = os.osc(freq1) * vol1, 
 	os.sawtooth(freq2) * vol2 * gate,
+	os.square(freq2) * vol2 * check,
 	(os.osc(1):light_1_r + os.osc(1.4):light_1_g + os.osc(1.7):light_1_b),
 	(os.osc(1):swl_2_r + os.osc(1.2):swl_2_g + os.osc(1.7):swl_2_b);
