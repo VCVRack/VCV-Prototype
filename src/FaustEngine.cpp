@@ -45,6 +45,11 @@ struct RackUI : public GenericUI
     vector<ConverterZoneControl*> fConverters;
     vector<updateFunction> fUpdateFunIn;
     vector<updateFunction> fUpdateFunOut;
+    
+    // For checkbox handling
+    struct CheckBox { float fLast = 0.0f; };
+    map <FAUSTFLOAT*, CheckBox> fCheckBoxes;
+    
     string fKey, fValue, fScale;
     
     int getIndex(const string& value)
@@ -78,11 +83,37 @@ struct RackUI : public GenericUI
             fUpdateFunIn.push_back([=] (ProcessBlock* block) { *zone = block->switches[index-1]; });
         }
     }
+    
+    void addCheckButton(const char* label, FAUSTFLOAT* zone)
+    {
+        int index = getIndex(fValue);
+        if (fKey == "switch" && (index != -1)) {
+            // Add a checkbox
+            fCheckBoxes[zone] = CheckBox();
+            // Update function
+            fUpdateFunIn.push_back([=] (ProcessBlock* block)
+            {
+                float state = block->switches[index-1];
+                // Detect upfront
+                if (state == 1.0 && (state != fCheckBoxes[zone].fLast)) {
+                    // Swich button state
+                    *zone = !*zone;
+                    // And set the color
+                    block->switchLights[index-1][0] = *zone;
+                    block->switchLights[index-1][1] = *zone;
+                    block->switchLights[index-1][2] = *zone;
+                }
+                // Always keep previous button state
+                fCheckBoxes[zone].fLast = state;
+            });
+        }
+    }
   
     void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
     {
         addNumEntry(label, zone, init, min, max, step);
     }
+    
     void addHorizontalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
     {
         addNumEntry(label, zone, init, min, max, step);
@@ -127,6 +158,7 @@ struct RackUI : public GenericUI
     {
         addBarGraph(zone);
     }
+    
     void addVerticalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max)
     {
         addBarGraph(zone);
