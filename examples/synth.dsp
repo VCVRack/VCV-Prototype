@@ -5,7 +5,7 @@
 import("stdfaust.lib");
 import("rack.lib");
 
-// Using knobs ([knob:N] metadata with :N from 1 to 6). Knob [0..1] range is mapped on [min..max] slider range, taking 'scale' metadata in account
+// Using knobs ([knob:N] metadata with N from 1 to 6). Knob [0..1] range is mapped on [min..max] slider range, taking 'scale' metadata in account
 
 vol1 = hslider("volume1 [knob:1]", 0.1, 0, 1, 0.01);
 freq1 = hslider("freq1 [knob:2] [unit:Hz] [scale:lin]", 300, 200, 300, 1);
@@ -13,7 +13,7 @@ freq1 = hslider("freq1 [knob:2] [unit:Hz] [scale:lin]", 300, 200, 300, 1);
 vol2 = hslider("volume2 [knob:3]", 0.1, 0, 1, 0.01);
 freq2 = hslider("freq2 [knob:4] [unit:Hz] ", 300, 200, 300, 1);
 
-// Using switches ([switch::N] metadata with N from 1 to 6)
+// Using switches ([switch:N] metadata with N from 1 to 6)
 
 gate = button("gate [switch:1]");
 
