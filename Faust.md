@@ -37,7 +37,7 @@ gain = hslider("gain [knob:2]", 0.5, 0, 1, 0.01);
 gate = button("gate [switch:1]");
 
 // DSP processor
-process = os.osc(freq) * gain, os.sawtooth(freq) * gain  * gate;
+process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
 ```
 
 Some additional files can be seen in the examples folder:
