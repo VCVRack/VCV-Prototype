@@ -63,7 +63,6 @@ struct RackUI : public GenericUI
                 return -1;
             }
         } catch (invalid_argument& e) {
-            cerr << "ERROR : " << e.what() << endl;
             return -1;
         }
     }
@@ -96,14 +95,14 @@ struct RackUI : public GenericUI
                 float state = block->switches[index-1];
                 // Detect upfront
                 if (state == 1.0 && (state != fCheckBoxes[zone].fLast)) {
-                    // Swich button state
+                    // Switch button state
                     *zone = !*zone;
                     // And set the color
                     block->switchLights[index-1][0] = *zone;
                     block->switchLights[index-1][1] = *zone;
                     block->switchLights[index-1][2] = *zone;
                 }
-                // Always keep previous button state
+                // Keep previous button state
                 fCheckBoxes[zone].fLast = state;
             });
         }
@@ -205,10 +204,14 @@ class FaustEngine : public ScriptEngine {
     
         int run(const string& path, const string& script) override
         {
-        #if defined ARCH_MAC
+        #if defined ARCH_LIN
+            string temp_cache = "/var/tmp/VCV_" + generateSHA1(script);
+        #elif defined ARCH_MAC
             string temp_cache = "/private/var/tmp/VCV_" + generateSHA1(script);
-        #else
-            string temp_cache = "" + generateSHA1(script);
+        #elif defined ARCH_WIN
+            char buf[MAX_PATH+1] = {0};
+            GetTempPath(sizeof(buf), buf);
+            string temp_cache = string(buf) + "/VCV_" + generateSHA1(script);
         #endif
             string error_msg;
             
