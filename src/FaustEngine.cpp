@@ -37,7 +37,7 @@ using namespace std;
 
 extern rack::Plugin* pluginInstance;
 
-// UI handler for switches, knobs and leds
+// UI handler for switches, knobs and lights
 struct RackUI : public GenericUI
 {
     typedef function<void(ProcessBlock* block)> updateFunction;
