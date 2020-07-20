@@ -1,4 +1,4 @@
-# Using Faust DSP language in the VCV Prototype 
+# Using Faust DSP language in VCV Prototype 
 
 The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly.
 
@@ -42,6 +42,6 @@ process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
 
 Some additional files can be seen in the examples folder:
 
-- [synth.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/synth.dsp) demonstrates how to use all different Prototype UI items
+- [synth.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
 - [organ.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
-- [physicalmodel.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/physicalmodel.dsp) demonstrates a model synthesis bell connected to a reverb
+- [physicalmodel.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
