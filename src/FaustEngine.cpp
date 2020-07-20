@@ -47,7 +47,7 @@ struct RackUI : public GenericUI
     vector<updateFunction> fUpdateFunOut;
     
     // For checkbox handling
-    struct CheckBox { float fLast = 0.0f; };
+    struct CheckBox { float fLastButton = 0.0f; };
     map <FAUSTFLOAT*, CheckBox> fCheckBoxes;
     
     string fKey, fValue, fScale;
@@ -92,9 +92,9 @@ struct RackUI : public GenericUI
             // Update function
             fUpdateFunIn.push_back([=] (ProcessBlock* block)
             {
-                float state = block->switches[index-1];
+                float button = block->switches[index-1];
                 // Detect upfront
-                if (state == 1.0 && (state != fCheckBoxes[zone].fLast)) {
+                if (button == 1.0 && (button != fCheckBoxes[zone].fLastButton)) {
                     // Switch button state
                     *zone = !*zone;
                     // And set the color
@@ -103,7 +103,7 @@ struct RackUI : public GenericUI
                     block->switchLights[index-1][2] = *zone;
                 }
                 // Keep previous button state
-                fCheckBoxes[zone].fLast = state;
+                fCheckBoxes[zone].fLastButton = button;
             });
         }
     }
