@@ -227,8 +227,31 @@ void LibPDEngine::receiveLights(const char* s) {
 		}
 	}
 	else {
-		// print out on command line
-		std::cout << "libpd prototype unrecognizes message: " << std::string(s) << std::endl;
+		bool utility_is_valid = true;
+		int utility_idx = -1;
+		try {
+			utility_idx = _utility_map.at(atoms[0]);      // map::at throws an out-of-range
+		}
+		catch (const std::out_of_range& oor) {
+			std::cout << "prototype libpd engine Pd console message: " << std::string(s) << std::endl;
+			utility_is_valid = false;
+			//display("Warning:"+atoms[1]+" not found!");
+			// print out on command line
+		}
+		if(utility_is_valid)
+		{
+			switch (utility_idx)
+			{
+			case 1:
+				std::cout << "prototype libpd engine Pd error message: " << std::string(s) << std::endl;
+				break;
+			
+			default:
+				break;
+			}
+		}
+
+		
 	}
 }
 
@@ -269,7 +292,8 @@ const std::map<std::string, int> LibPDEngine::_switchLight_map{
 };
 
 const std::map<std::string, int> LibPDEngine::_utility_map{
-	{ "display", 0 }
+	{ "display", 0 },
+	{ "error:", 1 }
 };
 
 
