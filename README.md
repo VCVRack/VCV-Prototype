@@ -149,5 +149,5 @@ make
 - [Andrew Belt](https://github.com/AndrewBelt): host code, Duktape (JavaScript, not used), LuaJIT (Lua), Python (in development)
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
-- [CHAIR](https://chair.audio) [Clemens Wegener (libpd), Max Neupert (patches)] : libpd
+- [CHAIR](https://chair.audio) (Clemens Wegener, Max Neupert): libpd
 - add your name here
