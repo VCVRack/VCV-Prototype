@@ -112,7 +112,10 @@ struct LuaJITEngine : ScriptEngine {
 		<< "float *switchLights[" << NUM_ROWS + 1 << "];" << std::endl
 		<< "};]]" << std::endl
 		// Declare the function `_castBlock` used to transform `luaBlock` pointer into a LuaJIT cdata
-		<< "function _castBlock(b) return ffi.cast('struct LuaProcessBlock*', b) end";
+		<< "_ffi_cast = ffi.cast" << std::endl
+		<< "function _castBlock(b) return _ffi_cast('struct LuaProcessBlock*', b) end" << std::endl
+		// Remove global functions that could be abused
+		<< "jit = nil; require = nil; ffi = nil; load = nil; loadfile = nil; loadstring = nil; dofile = nil;" << std::endl;
 		std::string ffi_script = ffi_stream.str();
 
 		// Compile the ffi script

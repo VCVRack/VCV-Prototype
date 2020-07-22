@@ -28,19 +28,30 @@ ScriptEngine* createScriptEngine(std::string extension) {
 }
 
 
-static std::string editorPath;
+static std::string settingsEditorPath;
+static std::string settingsPdEditorPath =
+#if defined ARCH_LIN
+	"\"/usr/bin/pd\"";
+#else
+	"";
+#endif
 
 
 json_t* settingsToJson() {
 	json_t* rootJ = json_object();
-	json_object_set_new(rootJ, "editorPath", json_string(editorPath.c_str()));
+	json_object_set_new(rootJ, "editorPath", json_string(settingsEditorPath.c_str()));
+	json_object_set_new(rootJ, "pdEditorPath", json_string(settingsPdEditorPath.c_str()));
 	return rootJ;
 }
 
 void settingsFromJson(json_t* rootJ) {
 	json_t* editorPathJ = json_object_get(rootJ, "editorPath");
 	if (editorPathJ)
-		editorPath = json_string_value(editorPathJ);
+		settingsEditorPath = json_string_value(editorPathJ);
+
+	json_t* pdEditorPathJ = json_object_get(rootJ, "pdEditorPath");
+	if (pdEditorPathJ)
+		settingsPdEditorPath = json_string_value(pdEditorPathJ);
 }
 
 void settingsLoad() {
@@ -75,27 +86,43 @@ void settingsSave() {
 	json_decref(rootJ);
 }
 
-void setEditorDialog() {
-	char* editorPathC = NULL;
+std::string getApplicationPathDialog() {
+	char* pathC = NULL;
 #if defined ARCH_LIN
-	editorPathC = osdialog_file(OSDIALOG_OPEN, "/usr/bin/", NULL, NULL);
+	pathC = osdialog_file(OSDIALOG_OPEN, "/usr/bin/", NULL, NULL);
 #elif defined ARCH_WIN
 	osdialog_filters* filters = osdialog_filters_parse("Executable:exe");
-	editorPathC = osdialog_file(OSDIALOG_OPEN, "C:/", NULL, filters);
+	pathC = osdialog_file(OSDIALOG_OPEN, "C:/", NULL, filters);
 	osdialog_filters_free(filters);
 #elif defined ARCH_MAC
 	osdialog_filters* filters = osdialog_filters_parse("Application:app");
-	editorPathC = osdialog_file(OSDIALOG_OPEN, "/Applications/", NULL, filters);
+	pathC = osdialog_file(OSDIALOG_OPEN, "/Applications/", NULL, filters);
 	osdialog_filters_free(filters);
 #endif
-	if (!editorPathC)
-		return;
+	if (!pathC)
+		return "";
 
-	editorPath = "\"";
-	editorPath += editorPathC;
-	editorPath += "\"";
+	std::string path = "\"";
+	path += pathC;
+	path += "\"";
+	std::free(pathC);
+	return path;
+}
+
+void setEditorDialog() {
+	std::string path = getApplicationPathDialog();
+	if (path == "")
+		return;
+	settingsEditorPath = path;
 	settingsSave();
-	std::free(editorPathC);
+}
+
+void setPdEditorDialog() {
+	std::string path = getApplicationPathDialog();
+	if (path == "")
+		return;
+	settingsPdEditorPath = path;
+	settingsSave();
 }
 
 
@@ -463,6 +490,13 @@ struct Prototype : Module {
 	}
 
 	void editScript() {
+		std::string editorPath;
+		// HACK check if extension is .pd
+		if (string::filenameExtension(string::filename(path)) == "pd")
+			editorPath = settingsPdEditorPath;
+		else
+			editorPath = settingsEditorPath;
+
 		if (editorPath.empty())
 			return;
 		if (path.empty())
@@ -539,22 +573,28 @@ struct Prototype : Module {
 		};
 		EditScriptItem* editScriptItem = createMenuItem<EditScriptItem>("Edit script");
 		editScriptItem->module = this;
-		editScriptItem->disabled = !doesPathExist() || editorPath == "";
+
+		// TODO fix for pdEditorPath
+		editScriptItem->disabled = !doesPathExist() || settingsEditorPath == "" && false;
 		menu->addChild(editScriptItem);
+
+		menu->addChild(new MenuSeparator);
 
 		struct SetEditorItem : MenuItem {
 			void onAction(const event::Action& e) override {
 				setEditorDialog();
 			}
 		};
-		SetEditorItem* setEditorItem = createMenuItem<SetEditorItem>("Set editor application");
+		SetEditorItem* setEditorItem = createMenuItem<SetEditorItem>("Set text editor application");
 		menu->addChild(setEditorItem);
 
-		// if (!editorPath.empty()) {
-		// 	std::string editorBase = string::filenameBase(string::filename(editorPath));
-		// 	MenuLabel* editorBaseLabel = createMenuLabel(editorBase);
-		// 	menu->addChild(editorBaseLabel);
-		// }
+		struct SetPdEditorItem : MenuItem {
+			void onAction(const event::Action& e) override {
+				setPdEditorDialog();
+			}
+		};
+		SetPdEditorItem* setPdEditorItem = createMenuItem<SetPdEditorItem>("Set Pure Data application");
+		menu->addChild(setPdEditorItem);
 	}
 };
 
