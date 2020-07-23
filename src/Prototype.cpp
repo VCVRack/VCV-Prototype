@@ -490,13 +490,7 @@ struct Prototype : Module {
 	}
 
 	void editScript() {
-		std::string editorPath;
-		// HACK check if extension is .pd
-		if (string::filenameExtension(string::filename(path)) == "pd")
-			editorPath = settingsPdEditorPath;
-		else
-			editorPath = settingsEditorPath;
-
+		std::string editorPath = getEditorPath();
 		if (editorPath.empty())
 			return;
 		if (path.empty())
@@ -504,10 +498,10 @@ struct Prototype : Module {
 		// Launch editor and detach
 #if defined ARCH_LIN
 		std::string command = editorPath + " \"" + path + "\" &";
-		std::system(command.c_str());
+		(void) std::system(command.c_str());
 #elif defined ARCH_MAC
 		std::string command = "open -a " + editorPath + " \"" + path + "\" &";
-		std::system(command.c_str());
+		(void) std::system(command.c_str());
 #elif defined ARCH_WIN
 		std::string command = editorPath + " \"" + path + "\"";
 		std::wstring commandW = string::toWstring(command);
@@ -574,8 +568,7 @@ struct Prototype : Module {
 		EditScriptItem* editScriptItem = createMenuItem<EditScriptItem>("Edit script");
 		editScriptItem->module = this;
 
-		// TODO fix for pdEditorPath
-		editScriptItem->disabled = !doesPathExist() || settingsEditorPath == "" && false;
+		editScriptItem->disabled = !doesPathExist() || (getEditorPath() == "");
 		menu->addChild(editScriptItem);
 
 		menu->addChild(new MenuSeparator);
@@ -595,6 +588,15 @@ struct Prototype : Module {
 		};
 		SetPdEditorItem* setPdEditorItem = createMenuItem<SetPdEditorItem>("Set Pure Data application");
 		menu->addChild(setPdEditorItem);
+	}
+
+	std::string getEditorPath() {
+		if (path == "")
+			return "";
+		// HACK check if extension is .pd
+		if (string::filenameExtension(string::filename(path)) == "pd")
+			return settingsPdEditorPath;
+		return settingsEditorPath;
 	}
 };
 
