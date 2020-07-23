@@ -31,7 +31,7 @@ ScriptEngine* createScriptEngine(std::string extension) {
 static std::string settingsEditorPath;
 static std::string settingsPdEditorPath =
 #if defined ARCH_LIN
-	"\"/usr/bin/pd\"";
+	"\"/usr/bin/pd-gui\"";
 #else
 	"";
 #endif
