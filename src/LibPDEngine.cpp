@@ -69,9 +69,8 @@ struct LibPDEngine : ScriptEngine {
 		libpd_set_printhook((t_libpd_printhook)libpd_print_concatenator);
 		libpd_set_concatenated_printhook(receiveLights);
 
-
 		if (libpd_num_instances() > 2) {
-			display("Sorry, multi instance support in libpd is under development!");
+			display("Multiple simultaneous libpd (Pure Data) instances not yet supported.");
 			return -1;
 		}
 
@@ -146,7 +145,7 @@ struct LibPDEngine : ScriptEngine {
 		_ticks = 1;
 		libpd_process_float(_ticks, _input, _output);
 
-		//return samples to prototype
+		// return samples to prototype
 		for (int s = 0; s < _pd_block_size; s++) {
 			for (int r = 0; r < rows; r++) {
 				block->outputs[r][s] = _output[s * rows + r]; // scale up again to +-5V signal
@@ -233,25 +232,21 @@ void LibPDEngine::receiveLights(const char* s) {
 			utility_idx = _utility_map.at(atoms[0]);      // map::at throws an out-of-range
 		}
 		catch (const std::out_of_range& oor) {
-			std::cout << "prototype libpd engine Pd console message: " << std::string(s) << std::endl;
+			WARN("Prototype libpd: %s", s);
 			utility_is_valid = false;
 			//display("Warning:"+atoms[1]+" not found!");
 			// print out on command line
 		}
-		if(utility_is_valid)
-		{
-			switch (utility_idx)
-			{
-			case 1:
-				std::cout << "prototype libpd engine Pd error message: " << std::string(s) << std::endl;
-				break;
-			
-			default:
-				break;
+		if (utility_is_valid) {
+			switch (utility_idx) {
+				case 1:
+					WARN("Prototype libpd: %s", s);
+					break;
+
+				default:
+					break;
 			}
 		}
-
-		
 	}
 }
 
