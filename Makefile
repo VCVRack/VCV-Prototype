@@ -222,8 +222,13 @@ DEPS += $(libpd)
 FLAGS += -Idep/include/libpd
 
 ifdef ARCH_WIN
-	FLAGS += -DPD_INTERNAL -D_WIN32
-	LDFLAGS += -shared -Wl,--export-all-symbols -lws2_32 -lkernel32 -static-libgcc
+# 	FLAGS += -D_WIN32
+	FLAGS += -DPD_INTERNAL
+# 	LDFLAGS += -shared
+	LDFLAGS += -Wl,--export-all-symbols
+	LDFLAGS += -lws2_32
+# 	LDFLAGS += -lkernel32
+# 	LDFLAGS += -static-libgcc
 endif
 
 $(libpd):
