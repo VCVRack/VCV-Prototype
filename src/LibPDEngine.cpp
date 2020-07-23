@@ -215,7 +215,7 @@ void LibPDEngine::receiveLights(const char* s) {
 		//std::cout << v[1] << ", " << g_led_map[v[1]] << std::endl;
 		if (utility_is_valid && atoms.size() >= 3) {
 			g_utility[0] = atoms[1]; // display
-			g_utility[1] = {""};
+			g_utility[1] = "";
 			for (unsigned i = 0; i < atoms.size() - 2; i++) {
 				g_utility[1] += " " + atoms[i + 2]; // concatenate message
 			}
