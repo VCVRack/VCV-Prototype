@@ -29,6 +29,8 @@
 
 #include <iostream>
 #include <memory>
+#include <map>
+#include <vector>
 #include <algorithm>
 #include <functional>
 
@@ -92,7 +94,7 @@ struct RackUI : public GenericUI
             {
                 *zone = block->switches[index-1];
                 
-                // And set the color to red when on
+                // And set the color to red when ON
                 block->switchLights[index-1][0] = *zone;
             });
         }
@@ -112,7 +114,7 @@ struct RackUI : public GenericUI
                 if (button == 1.0 && (button != fCheckBoxes[zone].fLastButton)) {
                     // Switch button state
                     *zone = !*zone;
-                    // And set the color
+                    // And set the color to white when ON
                     block->switchLights[index-1][0] = *zone;
                     block->switchLights[index-1][1] = *zone;
                     block->switchLights[index-1][2] = *zone;
