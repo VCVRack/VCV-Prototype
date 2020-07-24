@@ -23,7 +23,6 @@
 
 #include "ScriptEngine.hpp"
 
-#include <faust/dsp/llvm-dsp.h>
 #include <faust/dsp/libfaust.h>
 #include <faust/gui/DecoratorUI.h>
 #include <faust/gui/ValueConverter.h>
@@ -34,6 +33,14 @@
 using namespace std;
 
 #define kBufferSize 64
+
+//#define MIR
+
+#ifdef MIR
+#include <faust/dsp/interpreter-dsp.h>
+#else
+#include <faust/dsp/llvm-dsp.h>
+#endif
 
 extern rack::Plugin* pluginInstance;
 
@@ -205,7 +212,11 @@ class FaustEngine : public ScriptEngine {
             delete [] fInputs;
             delete [] fOutputs;
             delete fDSP;
-            deleteDSPFactory(fDSPFactory);
+        #ifdef MIR
+            deleteInterpreterDSPFactory(static_cast<interpreter_dsp_factory*>(fDSPFactory));
+        #else
+            deleteDSPFactory(static_cast<llvm_dsp_factory*>(fDSPFactory));
+        #endif
         }
     
         string getEngineName() override
@@ -227,7 +238,11 @@ class FaustEngine : public ScriptEngine {
             string error_msg;
             
             // Try to load the machine code cache
+        #ifdef MIR
+            fDSPFactory = readInterpreterDSPFactoryFromBitcodeFile(temp_cache, error_msg);
+        #else
             fDSPFactory = readDSPFactoryFromMachineFile(temp_cache, "", error_msg);
+        #endif
             
             if (!fDSPFactory) {
                 // Otherwise recompile the DSP
@@ -237,7 +252,11 @@ class FaustEngine : public ScriptEngine {
                 argv[argc++] = fDSPLibraries.c_str();
                 argv[argc] = nullptr;  // NULL terminated argv
                 
+            #ifdef MIR
+                fDSPFactory = createInterpreterDSPFactoryFromString("FaustDSP", script, argc, argv, error_msg);
+            #else
                 fDSPFactory = createDSPFactoryFromString("FaustDSP", script, argc, argv, "", error_msg, -1);
+            #endif
                 if (!fDSPFactory) {
                     display("ERROR : cannot create factory !");
                     WARN("Faust Prototype : %s", error_msg.c_str());
@@ -245,7 +264,11 @@ class FaustEngine : public ScriptEngine {
                 } else {
                     // And save the cache
                     display("Compiling factory finished");
-                    writeDSPFactoryToMachineFile(fDSPFactory, temp_cache, "");
+                #ifdef MIR
+                    writeInterpreterDSPFactoryToBitcodeFile(static_cast<interpreter_dsp_factory*>(fDSPFactory), temp_cache);
+                #else
+                    writeDSPFactoryToMachineFile(static_cast<llvm_dsp_factory*>(fDSPFactory), temp_cache, "");
+                #endif
                 }
             }
             
@@ -315,8 +338,8 @@ class FaustEngine : public ScriptEngine {
         }
     
     private:
-        llvm_dsp_factory* fDSPFactory;
-        llvm_dsp* fDSP;
+        dsp_factory* fDSPFactory;
+        dsp* fDSP;
         FAUSTFLOAT** fInputs;
         FAUSTFLOAT** fOutputs;
         RackUI fRackUI;
