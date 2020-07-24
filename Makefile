@@ -255,7 +255,13 @@ endif
 ifeq ($(FAUST), 1)
 SOURCES += src/FaustEngine.cpp
 FLAGS += -I/use/local/include
+
+# Using LLVM
 LDFLAGS += -L/usr/local/lib -lfaust 
+
+# Test using MIR
+#LDFLAGS += -L/usr/local/lib -lfaust dep/lib/mir-gen.o dep/lib/mir.o
+
 DEPS += $(faust)
 OBJECTS += $(faust)
 DISTRIBUTABLES += faust_libraries
