@@ -4,10 +4,20 @@ The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Protot
 
 ## Compiling on OSX
 
-The Faust *libfaust* library will have to be compiled as a dynamic version, and installed on your machine. Then the [Faust aware VCV Prototype](https://github.com/sletz/VCV-Prototype) can be compiled and installed.
+The Faust *libfaust* dynamic library has to be available in your system. You can get is from a precompiled Faust release (simpler), or compile it yourself (harder). Then the [Faust aware VCV Prototype](https://github.com/sletz/VCV-Prototype) can be compiled and installed.
+
+### Installing the *libfaust* dynamic library from a precompiled package:
+
+- go on Faust [release page](https://github.com/grame-cncm/faust/releases) and get the latest .dmg for OSX.
+- mount the disk image and copy the 3 *libfaust.dylib*, *libfaust.2.dylib* and *libfaust.x.y.z.dylib* files located in the disk image */lib* folder in your system */usr/local/lib* folder
+
+### Compiling the *libfaust* dynamic library:
 
 - clone the [Faust GitHub project](https://github.com/grame-cncm/faust)
 - assuming you have installed the LLVM dependency (with brew or macports on OSX), type `make world` to compile the libfaust libray in dynamic mode (read https://github.com/grame-cncm/faust/wiki/Building if needed)
+
+### Compiling the VCV Prototype:
+
 - clone the [Faust aware VCV Prototype](https://github.com/sletz/VCV-Prototype)  then type `make && make install` to build it
 - you can now add a Faust aware VCV Prototype in your Rack session and start coding in Faust.
 

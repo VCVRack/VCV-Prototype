@@ -263,3 +263,4 @@ FAUST_MAKE_FLAGS += prefix="$(DEP_PATH)"
 endif
 
 include $(RACK_DIR)/plugin.mk
+

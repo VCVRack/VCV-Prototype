@@ -79,7 +79,13 @@ struct RackUI : public GenericUI
     {
         int index = getIndex(fValue);
         if (fKey == "switch" && (index != -1)) {
-            fUpdateFunIn.push_back([=] (ProcessBlock* block) { *zone = block->switches[index-1]; });
+            fUpdateFunIn.push_back([=] (ProcessBlock* block)
+            {
+                *zone = block->switches[index-1];
+                
+                // And set the color to red when on
+                block->switchLights[index-1][0] = *zone;
+            });
         }
     }
     
@@ -161,6 +167,11 @@ struct RackUI : public GenericUI
     void addVerticalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max)
     {
         addBarGraph(zone);
+    }
+    
+    void addSoundfile(const char* label, const char* soundpath, Soundfile** sf_zone)
+    {
+        WARN("Faust Prototype : 'soundfile' primitive not yet supported");
     }
         
     void declare(FAUSTFLOAT* zone, const char* key, const char* val)
