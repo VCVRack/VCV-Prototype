@@ -29,6 +29,8 @@
 
 #include <iostream>
 #include <memory>
+#include <algorithm>
+#include <functional>
 
 using namespace std;
 
