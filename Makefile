@@ -206,8 +206,8 @@ SOURCES += src/VultEngine.cpp
 vult := dep/vult/vultc.h
 $(vult):
 	cd dep && mkdir -p vult
-	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.9/vultc.h"
-	$(SHA256) $(vult) 91f575afd2913d0879df90ee666021065ad726372f0bd306198024dc771cce55
+	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.12/vultc.h"
+	$(SHA256) $(vult) 3e80f6d30defe7df2804568f0314dbb33e6bf69d53d18a804c8b8132cf5ad146
 FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
