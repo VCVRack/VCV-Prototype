@@ -28,9 +28,12 @@ Faust DSP files have to be loaded in VCV Prototype and edited in a external edit
 The 6 *switches*, *knobs* as well as the *lights* and *switchLights* can be connected to UI controllers using metadata:
 
 - `[switch:N]` (with N from 1 to 6) has to be used in a `button` or `checkbox` item to connect it to the prototype interface switch number N. Pushed buttons will become red  when on, and checkboxes will become white when on.
-- `[knob:N]` (with N from 1 to 6) has to be used in a `vslider`, `hslider`  or `nentry` item to connect it to the prototype interface knob number N.
+- `[knob:N]` (with N from 1 to 6) has to be used in a `vslider`, `hslider`  or `nentry` item to connect it to the prototype interface knob number N. The knob [0..1] range will be mapped to the slider/nentry [min..max] range.
 - `[light_red|green|red:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` item to connect it to the prototype interface light number N.
 - `[switchlight_red|green|red:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` to connect it to the prototype interface switchLight number N.
+
+Other metadata:
+- `[scale:lin|log|exp]` metadata is implemented.
 
 The [faust_libraries/rack.lib](https://github.com/sletz/VCV-Prototype/blob/master/faust_libraries/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
 
