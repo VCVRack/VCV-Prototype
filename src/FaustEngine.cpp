@@ -38,7 +38,7 @@ using namespace std;
 
 #define kBufferSize 64
 
-//#define MIR
+#define MIR
 
 #ifdef MIR
 #include <faust/dsp/interpreter-dsp.h>
@@ -208,7 +208,7 @@ class FaustEngine : public ScriptEngine {
             fDSP(nullptr),
             fInputs(nullptr),
             fOutputs(nullptr),
-            fDSPLibraries(rack::asset::plugin(pluginInstance, "faust_libraries"))
+            fDSPLibraries(rack::asset::plugin(pluginInstance, "res/faust"))
         {}
     
         ~FaustEngine()

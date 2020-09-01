@@ -253,19 +253,24 @@ endif
 # Faust: compile the libfaust dynamic library with 'make world && sudo make install'
 >>>>>>> Document Faust setup in Makefile.
 ifeq ($(FAUST), 1)
+libfaust := dep/faust/build/lib/libfaust.a
 SOURCES += src/FaustEngine.cpp
-FLAGS += -I/use/local/include
+OBJECTS += $(libfaust)
+DEPS += $(libfaust)
+LDFLAGS += dep/faust/build/lib/libfaust.a 
 
-# Using LLVM
-LDFLAGS += -L/usr/local/lib -lfaust 
+
+# Test using LLVM 
+#LDFLAGS += -L/usr/local/lib -lfaust
 
 # Test using MIR
 #LDFLAGS += -L/usr/local/lib -lfaust dep/lib/mir-gen.o dep/lib/mir.o
 
-DEPS += $(faust)
-OBJECTS += $(faust)
-DISTRIBUTABLES += faust_libraries
-FAUST_MAKE_FLAGS += prefix="$(DEP_PATH)"
+$(libfaust):
+	cd dep && git clone "https://github.com/grame-cncm/faust.git" 
+	cd dep/faust && git submodule update --init --recursive && cp -rf libraries/* ../../res/faust
+	cd dep/faust && make -C build cmake BACKENDS=interp.cmake TARGETS=interp.cmake && make -C build
+
 endif
 
 include $(RACK_DIR)/plugin.mk
