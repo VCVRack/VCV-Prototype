@@ -2,23 +2,9 @@
 
 The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly.
 
-## Compiling on OSX
+## Compilation
 
-The Faust *libfaust* dynamic library has to be available in your system. You can get it from a precompiled Faust release (simpler), or compile it yourself (harder). Then the [Faust aware VCV Prototype](https://github.com/sletz/VCV-Prototype) can be compiled and installed.
-
-### Installing the *libfaust* dynamic library from a precompiled package:
-
-- go on Faust [release page](https://github.com/grame-cncm/faust/releases) and get the latest .dmg for OSX
-- mount the disk image and copy the 3 *libfaust.dylib*, *libfaust.2.dylib* and *libfaust.x.y.z.dylib* files located in the disk image */lib* folder in your system */usr/local/lib* folder
-
-### Compiling the *libfaust* dynamic library:
-
-- clone the [Faust GitHub project](https://github.com/grame-cncm/faust)
-- assuming you have installed the LLVM dependency (with brew or macports on OSX), type `make world` to compile the libfaust libray in dynamic mode (read https://github.com/grame-cncm/faust/wiki/Building if needed)
-
-### Compiling the VCV Prototype:
-
-- clone the [Faust aware VCV Prototype](https://github.com/sletz/VCV-Prototype)  then type `make && make install` to build it
+- type `make && make install` to build it
 - you can now add a Faust aware VCV Prototype in your Rack session and start coding in Faust
 
 ## Loading/editing/compiling .dsp files
@@ -55,6 +41,6 @@ process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
 
 Some additional files can be seen in the examples folder:
 
-- [synth.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
-- [organ.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
-- [physicalmodel.dsp](https://github.com/sletz/VCV-Prototype/blob/master/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
+- [synth.dsp](https://github.com/VCV-Prototype/blob/master/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
+- [organ.dsp](https://github.com/VCV-Prototype/blob/master/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
+- [physicalmodel.dsp](https://github.com/VCV-Prototype/blob/master/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
