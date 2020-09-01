@@ -254,6 +254,8 @@ libfaust := dep/faust/build/lib/libfaust.a
 SOURCES += src/FaustEngine.cpp
 OBJECTS += $(libfaust)
 DEPS += $(libfaust)
+FLAGS += -Idep/faust/architecture
+FLAGS += -DINTERP
 LDFLAGS += dep/faust/build/lib/libfaust.a 
 
 # Test using LLVM 
@@ -263,8 +265,8 @@ LDFLAGS += dep/faust/build/lib/libfaust.a
 #LDFLAGS += -L/usr/local/lib -lfaust dep/lib/mir-gen.o dep/lib/mir.o
 
 $(libfaust):
-	cd dep && git clone "https://github.com/grame-cncm/faust.git"
-	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1 && git submodule update --init --recursive && cp -rf libraries/* ../../res/faust
+	cd dep && git clone "https://github.com/grame-cncm/faust.git" --recursive
+	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1 && cp -rf libraries/* ../../res/faust
 	cd dep/faust && make -C build cmake BACKENDS=interp.cmake TARGETS=interp.cmake && make -C build
 
 endif
