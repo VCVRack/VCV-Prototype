@@ -17,8 +17,9 @@ QUICKJS ?= 0
 LUAJIT ?= 0
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
-VULT ?= 1
-LIBPD ?= 1
+VULT ?= 0
+LIBPD ?= 0
+FAUST ?= 1
 
 # Vult depends on both LuaJIT and QuickJS
 ifeq ($(VULT), 1)
@@ -211,7 +212,6 @@ FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
 
-<<<<<<< HEAD
 # LibPD
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
@@ -249,16 +249,12 @@ endif
 
 
 # Faust
-=======
-# Faust: compile the libfaust dynamic library with 'make world && sudo make install'
->>>>>>> Document Faust setup in Makefile.
 ifeq ($(FAUST), 1)
 libfaust := dep/faust/build/lib/libfaust.a
 SOURCES += src/FaustEngine.cpp
 OBJECTS += $(libfaust)
 DEPS += $(libfaust)
 LDFLAGS += dep/faust/build/lib/libfaust.a 
-
 
 # Test using LLVM 
 #LDFLAGS += -L/usr/local/lib -lfaust
@@ -267,8 +263,8 @@ LDFLAGS += dep/faust/build/lib/libfaust.a
 #LDFLAGS += -L/usr/local/lib -lfaust dep/lib/mir-gen.o dep/lib/mir.o
 
 $(libfaust):
-	cd dep && git clone "https://github.com/grame-cncm/faust.git" 
-	cd dep/faust && git submodule update --init --recursive && cp -rf libraries/* ../../res/faust
+	cd dep && git clone "https://github.com/grame-cncm/faust.git"
+	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1 && git submodule update --init --recursive && cp -rf libraries/* ../../res/faust
 	cd dep/faust && make -C build cmake BACKENDS=interp.cmake TARGETS=interp.cmake && make -C build
 
 endif
