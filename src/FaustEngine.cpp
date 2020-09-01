@@ -38,9 +38,7 @@ using namespace std;
 
 #define kBufferSize 64
 
-#define MIR
-
-#ifdef MIR
+#ifdef INTERP
 #include <faust/dsp/interpreter-dsp.h>
 #else
 #include <faust/dsp/llvm-dsp.h>
@@ -216,7 +214,7 @@ class FaustEngine : public ScriptEngine {
             delete [] fInputs;
             delete [] fOutputs;
             delete fDSP;
-        #ifdef MIR
+        #ifdef INTERP
             deleteInterpreterDSPFactory(static_cast<interpreter_dsp_factory*>(fDSPFactory));
         #else
             deleteDSPFactory(static_cast<llvm_dsp_factory*>(fDSPFactory));
@@ -242,7 +240,7 @@ class FaustEngine : public ScriptEngine {
             string error_msg;
             
             // Try to load the machine code cache
-        #ifdef MIR
+        #ifdef INTERP
             fDSPFactory = readInterpreterDSPFactoryFromBitcodeFile(temp_cache, error_msg);
         #else
             fDSPFactory = readDSPFactoryFromMachineFile(temp_cache, "", error_msg);
@@ -256,7 +254,7 @@ class FaustEngine : public ScriptEngine {
                 argv[argc++] = fDSPLibraries.c_str();
                 argv[argc] = nullptr;  // NULL terminated argv
                 
-            #ifdef MIR
+            #ifdef INTERP
                 fDSPFactory = createInterpreterDSPFactoryFromString("FaustDSP", script, argc, argv, error_msg);
             #else
                 fDSPFactory = createDSPFactoryFromString("FaustDSP", script, argc, argv, "", error_msg, -1);
@@ -268,7 +266,7 @@ class FaustEngine : public ScriptEngine {
                 } else {
                     // And save the cache
                     display("Compiling factory finished");
-                #ifdef MIR
+                #ifdef INTERP
                     writeInterpreterDSPFactoryToBitcodeFile(static_cast<interpreter_dsp_factory*>(fDSPFactory), temp_cache);
                 #else
                     writeDSPFactoryToMachineFile(static_cast<llvm_dsp_factory*>(fDSPFactory), temp_cache, "");
