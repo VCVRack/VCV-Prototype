@@ -148,6 +148,7 @@ struct RackUI : public GenericUI
             fUpdateFunIn.push_back([=] (ProcessBlock* block) { converter->update(block->knobs[index-1]); });
             fConverters.push_back(converter);
         }
+        fScale = "lin";
     }
     
     void addBarGraph(FAUSTFLOAT* zone)
