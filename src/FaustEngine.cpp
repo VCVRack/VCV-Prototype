@@ -96,6 +96,7 @@ struct RackUI : public GenericUI
                 block->switchLights[index-1][0] = *zone;
             });
         }
+        fKey = fValue = "";
     }
     
     void addCheckButton(const char* label, FAUSTFLOAT* zone)
@@ -121,6 +122,7 @@ struct RackUI : public GenericUI
                 fCheckBoxes[zone].fLastButton = button;
             });
         }
+        fKey = fValue = "";
     }
   
     void addVerticalSlider(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step)
@@ -149,6 +151,7 @@ struct RackUI : public GenericUI
             fConverters.push_back(converter);
         }
         fScale = "lin";
+        fKey = fValue = "";
     }
     
     void addBarGraph(FAUSTFLOAT* zone)
@@ -167,6 +170,7 @@ struct RackUI : public GenericUI
         } else if ((fKey == "switchlight_blue") && (index != -1)) {
             fUpdateFunOut.push_back([=] (ProcessBlock* block) { block->switchLights[index-1][2] = *zone; });
         }
+        fKey = fValue = "";
     }
     
     void addHorizontalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max)
