@@ -114,7 +114,7 @@ LDFLAGS += -lpthread -lasound -ludev
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 1
 	cd dep/supercollider && git checkout 84b14d10d49edce6dd8303045a884fb7f2bc92e8
-	cd dep/supercollider && git submodule update --init -- $(SUPERCOLLIDER_SUBMODULES)
+	cd dep/supercollider && git submodule update --depth 1 --init -- $(SUPERCOLLIDER_SUBMODULES)
 	cd dep/supercollider && mkdir build
 	cd dep/supercollider/build && $(CMAKE) .. $(SUPERCOLLIDER_CMAKE_FLAGS)
 	cd dep/supercollider/build && $(MAKE) libsclang
