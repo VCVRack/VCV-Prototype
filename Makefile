@@ -16,7 +16,7 @@ DUKTAPE ?= 0
 QUICKJS ?= 1
 LUAJIT ?= 1
 PYTHON ?= 0
-SUPERCOLLIDER ?= 0
+SUPERCOLLIDER ?= 1
 VULT ?= 1
 LIBPD ?= 1
 FAUST ?= 1
@@ -89,20 +89,16 @@ endif
 ifeq ($(SUPERCOLLIDER), 1)
 SOURCES += src/SuperColliderEngine.cpp
 FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface
-# FLAGS += -DNDEBUG # TODO is this OK? Andrew: No, unless you can tell me a good reason.
+FLAGS += -DNDEBUG
 # FLAGS += -DSC_VCV_ENGINE_TIMING # uncomment to turn on timing printing while running
 supercollider := dep/supercollider/build/lang/libsclang.a
 OBJECTS += $(supercollider)
 DEPS += $(supercollider)
 DISTRIBUTABLES += dep/supercollider/SCClassLibrary
 DISTRIBUTABLES += support/supercollider_extensions
-SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=OFF -DSC_EL=OFF -DSC_VIM=OFF -DSC_ED=OFF -DSC_IDE=OFF -DSC_ABLETON_LINK=OFF -DSC_QT=OFF -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=OFF -DBUILD_TESTING=OFF
+SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=0 -DSC_EL=0 -DSC_VIM=0 -DSC_ED=0 -DSC_IDE=0 -DSC_ABLETON_LINK=0 -DSC_QT=0 -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=0 -DBUILD_TESTING=0 -DNO_LIBSNDFILE=1
 SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio_sc_org external_libraries/yaml-cpp
 SUPERCOLLIDER_BRANCH := topic/vcv-prototype-support
-
-# FIXME should be able to find some better way of getting link library names!
-# Andrew: Just hard-code them as below, perhaps surrounded with `ifdef ARCH_*`. The "cat an external txt file" approach is unusual and not as explicit.
-# LDFLAGS += $$(cat dep/supercollider/build/lang/vcv_libsclang_link_line.txt)
 
 OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
 OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
@@ -112,10 +108,7 @@ OBJECTS += dep/supercollider/build/external_libraries/libboost_system_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_regex_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_filesystem_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libyaml.a
-# TODO
-# Andrew: We can't assume anything about the users' system, so you're gonna have to either avoid using these libraries or build and statically link them.
-LDFLAGS += -lsndfile
-# However, these can be assumed because I've never seen a system without them that can run Rack.
+
 LDFLAGS += -lpthread -lasound -ludev
 
 $(supercollider):
@@ -126,8 +119,6 @@ $(supercollider):
 	cd dep/supercollider && mkdir build
 	cd dep/supercollider/build && $(CMAKE) .. $(SUPERCOLLIDER_CMAKE_FLAGS)
 	cd dep/supercollider/build && $(MAKE) libsclang
-	cd dep/supercollider/build && $(MAKE) generate_libsclang_link_line
-# 	cd dep/supercollider/build && $(MAKE) install
 endif
 
 
