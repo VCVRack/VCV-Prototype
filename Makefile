@@ -89,7 +89,6 @@ endif
 ifeq ($(SUPERCOLLIDER), 1)
 SOURCES += src/SuperColliderEngine.cpp
 FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface
-FLAGS += -DNDEBUG
 # FLAGS += -DSC_VCV_ENGINE_TIMING # uncomment to turn on timing printing while running
 supercollider := dep/supercollider/build/lang/libsclang.a
 OBJECTS += $(supercollider)
