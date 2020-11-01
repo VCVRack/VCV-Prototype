@@ -225,7 +225,7 @@ public:
 		fDSP(nullptr),
 		fInputs(nullptr),
 		fOutputs(nullptr),
-		fDSPLibraries(rack::asset::plugin(pluginInstance, "faust_libraries"))
+		fDSPLibraries(rack::asset::plugin(pluginInstance, "res/faust"))
 	{}
 
 	~FaustEngine() {
