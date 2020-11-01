@@ -200,7 +200,7 @@ struct RackUI : public GenericUI {
 	}
 
 	void addSoundfile(const char* label, const char* soundpath, Soundfile** sf_zone) override {
-		WARN("Faust Prototype : 'soundfile' primitive not yet supported", "");
+		WARN("Faust Prototype : 'soundfile' primitive not yet supported");
 	}
 
 	void declare(FAUSTFLOAT* zone, const char* key, const char* val) override {
