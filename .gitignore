@@ -5,3 +5,4 @@
 /plugin.dylib
 /plugin.dll
 .DS_Store
+/faust_libraries

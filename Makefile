@@ -4,7 +4,7 @@ FLAGS += -Idep/include
 CFLAGS +=
 CXXFLAGS +=
 
-LDFLAGS += 
+LDFLAGS +=
 SOURCES += src/Prototype.cpp
 
 DISTRIBUTABLES += res examples
@@ -13,12 +13,12 @@ DISTRIBUTABLES += $(wildcard LICENSE*)
 include $(RACK_DIR)/arch.mk
 
 DUKTAPE ?= 0
-QUICKJS ?= 0
-LUAJIT ?= 0
+QUICKJS ?= 1
+LUAJIT ?= 1
 PYTHON ?= 0
 SUPERCOLLIDER ?= 0
-VULT ?= 0
-LIBPD ?= 0
+VULT ?= 1
+LIBPD ?= 1
 FAUST ?= 1
 
 # Vult depends on both LuaJIT and QuickJS
@@ -223,7 +223,7 @@ FLAGS += -Idep/include/libpd -DHAVE_LIBDL
 ifdef ARCH_WIN
 	# the PD_INTERNAL leaves the function declarations for libpd unchanged
 	# not specifying that flag would enable the  "EXTERN __declspec(dllexport) extern" macro
-	# which throughs a linker error. I guess this macro should only be used for the windows 
+	# which throughs a linker error. I guess this macro should only be used for the windows
 	# specific .dll dynamic linking format.
 	# The corresponding #define resides in "m_pd.h" inside pure data sources
 	FLAGS += -DPD_INTERNAL
@@ -250,15 +250,13 @@ endif
 
 # Faust
 ifeq ($(FAUST), 1)
-libfaust := dep/faust/build/lib/libfaust.a
+libfaust := dep/lib/libfaust.a
 SOURCES += src/FaustEngine.cpp
 OBJECTS += $(libfaust)
 DEPS += $(libfaust)
-FLAGS += -Idep/faust/architecture
 FLAGS += -DINTERP
-LDFLAGS += dep/faust/build/lib/libfaust.a 
 
-# Test using LLVM 
+# Test using LLVM
 #LDFLAGS += -L/usr/local/lib -lfaust
 
 # Test using MIR
@@ -266,10 +264,11 @@ LDFLAGS += dep/faust/build/lib/libfaust.a
 
 $(libfaust):
 	cd dep && git clone "https://github.com/grame-cncm/faust.git" --recursive
-	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1 && cp -rf libraries/* ../../res/faust
-	cd dep/faust && make -C build cmake BACKENDS=interp.cmake TARGETS=interp.cmake && make -C build
+	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1
+	cd dep/faust/build && make cmake BACKENDS=interp.cmake TARGETS=interp.cmake
+	cd dep/faust/build && make install PREFIX="$(DEP_PATH)"
+	cp -rf dep/faust/libraries/* faust_libraries/
 
 endif
 
 include $(RACK_DIR)/plugin.mk
-
