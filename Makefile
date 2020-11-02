@@ -267,7 +267,7 @@ $(libfaust):
 	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1
 	cd dep/faust/build && make cmake BACKENDS=interp.cmake TARGETS=interp.cmake
 	cd dep/faust/build && make install PREFIX="$(DEP_PATH)"
-	cp -rf dep/faust/libraries/* faust_libraries/
+	cp -rf dep/faust/libraries/* res/faust/
 
 endif
 
