@@ -94,10 +94,7 @@ struct RackUI : public GenericUI {
 		if (fKey == "switch" && (index != -1)) {
 			fUpdateFunIn.push_back([ = ](ProcessBlock * block) {
 				*zone = block->switches[index - 1];
-
-				// And set the color to red when ON
-				block->switchLights[index - 1][0] = *zone;
-			});
+            });
 		}
 		fKey = fValue = "";
 	}
@@ -114,11 +111,7 @@ struct RackUI : public GenericUI {
 				if (button == 1.0 && (button != fCheckBoxes[zone].fLastButton)) {
 					// Switch button state
 					*zone = !*zone;
-					// And set the color to white when ON
-					block->switchLights[index - 1][0] = *zone;
-					block->switchLights[index - 1][1] = *zone;
-					block->switchLights[index - 1][2] = *zone;
-				}
+                }
 				// Keep previous button state
 				fCheckBoxes[zone].fLastButton = button;
 			});

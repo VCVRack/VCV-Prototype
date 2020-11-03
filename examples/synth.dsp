@@ -15,26 +15,25 @@ freq2 = hslider("freq2 [knob:4] [unit:Hz] ", 300, 200, 300, 1);
 
 // Using switches ([switch:N] metadata with N from 1 to 6)
 
-gate = button("gate [switch:1]");
+gate = button("gate [switch:1]") : vbargraph("[switchlight_red:1]", 0, 1);
 
-// Checkbox can be used, the switch button will go be white when checked
+// Checkbox can be used, the switch button will be white when checked
 
-check = checkbox("check [switch:2]");
+check = checkbox("check [switch:2]") 
+	: vbargraph("[switchlight_red:2]", 0, 1) 
+	: vbargraph("[switchlight_green:2]", 0, 1)
+	: vbargraph("[switchlight_blue:2]", 0, 1);
 
-// Using bargraph to control lights ([light_red|green|blue:N] metadata with N from 1 to 6, to control 3 colors)
+// Using bargraph to control lights ([light_red:N|light_green:N|light_blue:N] metadata with N from 1 to 6, to control 3 colors)
 
-light_1_r = vbargraph("[light_red:1]", 0, 1);
-light_1_g = vbargraph("[light_green:1]", 0, 1);
-light_1_b = vbargraph("[light_blue:1]", 0, 1);
+l_red(i) = vbargraph("[light_red:%i]", 0, 1);
+l_green(i) = vbargraph("[light_green:%i]", 0, 1);
+l_blue(i) = vbargraph("[light_blue:%i]", 0, 1);
 
-// Using bargraph to control switchlights ([switchlight_red|green|blue:N] metadata with N from 1 to 6, to control 3 colors)
+// Using bargraph to control switchlights ([switchlight_red:N|switchlight_green:N|switchlight_blue:N] metadata with N from 1 to 6, to control 3 colors)
 
-swl_2_r = vbargraph("[switchlight_red:3]", 0, 1);
-swl_2_g = vbargraph("[switchlight_green:3]", 0, 1);
-swl_2_b = vbargraph("[switchlight_blue:3]", 0, 1);
+swl_red(i) = vbargraph("[switchlight_red:%i]", 0, 1);
+swl_green(i) = vbargraph("[switchlight_green:%i]", 0, 1);
+swl_blue(i) = vbargraph("[switchlight_blue:%i]", 0, 1);
 
-process = os.osc(freq1) * vol1, 
-	os.sawtooth(freq2) * vol2 * gate,
-	os.square(freq2) * vol2 * check,
-	(os.osc(1):light_1_r + os.osc(1.4):light_1_g + os.osc(1.7):light_1_b),
-	(os.osc(1):swl_2_r + os.osc(1.2):swl_2_g + os.osc(1.7):swl_2_b);
+process = os.osc(freq1) * vol1, os.sawtooth(freq2) * vol2 * gate, os.square(freq2) * vol2 * check;
