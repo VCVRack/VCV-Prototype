@@ -15,13 +15,13 @@ The 6 *switches*, *knobs* as well as the *lights* and *switchLights* can be conn
 
 - `[switch:N]` (with N from 1 to 6) has to be used in a `button` or `checkbox` item to connect it to the prototype interface switch number N. Pushed buttons will become red  when on, and checkboxes will become white when on.
 - `[knob:N]` (with N from 1 to 6) has to be used in a `vslider`, `hslider`  or `nentry` item to connect it to the prototype interface knob number N. The knob [0..1] range will be mapped to the slider/nentry [min..max] range.
-- `[light_red|green|red:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` item to connect it to the prototype interface light number N.
-- `[switchlight_red|green|red:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` to connect it to the prototype interface switchLight number N.
+- `[light_red:N|light_green:N|light_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` item to connect it to the prototype interface light number N.
+- `[switchlight_red:N|switchlight_green:N|switchlight_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` to connect it to the prototype interface switchLight number N.
 
 Other metadata:
 - `[scale:lin|log|exp]` metadata is implemented.
 
-The [faust_libraries/rack.lib](https://github.com/sletz/VCV-Prototype/blob/master/faust_libraries/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
+The [res/faust/rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
 
 ## DSP examples
 
