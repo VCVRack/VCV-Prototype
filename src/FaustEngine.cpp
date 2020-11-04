@@ -38,6 +38,10 @@
 #include <faust/gui/DecoratorUI.h>
 #include <faust/gui/ValueConverter.h>
 
+#if defined ARCH_WIN
+    #include <windows.h>
+#endif
+
 #define kBufferSize 64
 
 #ifdef INTERP
