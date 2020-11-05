@@ -39,8 +39,16 @@ gate = button("gate [switch:1]");
 process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
 ```
 
-Some additional files can be seen in the examples folder:
+The standard examples ported to Faust can be seen in the examples folder:
+
+- [gain.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/gain.dsp)
+- [rainbow.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/rainbow.dsp) 
+- [vco.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/vco.dsp)
+
+Some additional examples:
 
 - [synth.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
 - [organ.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
 - [physicalmodel.dsp](https://github.com/VCVRack/VCV-Prototype/blob/faust/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
+
+

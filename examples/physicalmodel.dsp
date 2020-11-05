@@ -15,7 +15,7 @@ with {
 freeverb_demo = _,_ <: (*(g)*fixedgain,*(g)*fixedgain : 
 	re.stereo_freeverb(combfeed, allpassfeed, damping, spatSpread)), 
 	*(1-g), *(1-g) :> _,_
-with{
+with {
 	scaleroom   = 0.28;
 	offsetroom  = 0.7;
 	allpassfeed = 0.5;
