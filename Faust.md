@@ -13,10 +13,14 @@ Faust DSP files have to be loaded in VCV Prototype and edited in a external edit
 
 The 6 *switches*, *knobs* as well as the *lights* and *switchLights* can be connected to UI controllers using metadata:
 
-- `[switch:N]` (with N from 1 to 6) has to be used in a `button` or `checkbox` item to connect it to the prototype interface switch number N. Pushed buttons will become red  when on, and checkboxes will become white when on.
-- `[knob:N]` (with N from 1 to 6) has to be used in a `vslider`, `hslider`  or `nentry` item to connect it to the prototype interface knob number N. The knob [0..1] range will be mapped to the slider/nentry [min..max] range.
-- `[light_red:N|light_green:N|light_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` item to connect it to the prototype interface light number N.
-- `[switchlight_red:N|switchlight_green:N|switchlight_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` to connect it to the prototype interface switchLight number N.
+- `[switch:N]` (with N from 1 to 6) has to be used in a `button` or `checkbox` item to connect it to the prototype interface switch number N
+- `[knob:N]` (with N from 1 to 6) has to be used in a `vslider`, `hslider`  or `nentry` item to connect it to the prototype interface knob number N. The knob [0..1] range will be mapped to the slider/nentry [min..max] range
+- `[light_red:N|light_green:N|light_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` item to connect it to the prototype interface light number N
+- `[switchlight_red:N|switchlight_green:N|switchlight_blue:N]` (with N from 1 to 6) has to be used in a `vbargraph` or `hbargraph` to connect it to the prototype interface switchLight number N 
+
+So a button or checkbox UI item can use the `[switch:N]` metadata to be associated with the corresponding GUI switch, which color can be controlled using the `switchlight_xx:N` metadata. For instance:  
+- `gate = button("gate [switch:1") : hbargraph("[switchlight_red:1]", 0, 1); ` can be written to describe a button which become red when pressed
+- ` check = checkbox("check [switch:2]") : vbargraph("[switchlight_red:2]", 0, 1) : vbargraph("[switchlight_green:2]", 0, 1) : vbargraph("[switchlight_blue:2]", 0, 1); ` can be written to describe a checkbox which become white when checked
 
 Other metadata:
 - `[scale:lin|log|exp]` metadata is implemented.
