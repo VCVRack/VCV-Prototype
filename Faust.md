@@ -4,7 +4,7 @@ The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Protot
 
 ## Compilation
 
-- type `make && make install` to build it
+- type `make dep && make && make install` to build it
 - you can now add a Faust aware VCV Prototype in your Rack session and start coding in Faust
 
 ## Loading/editing/compiling .dsp files
@@ -25,7 +25,7 @@ So a button or checkbox UI item can use the `[switch:N]` metadata to be associat
 Other metadata:
 - `[scale:lin|log|exp]` metadata is implemented.
 
-The [res/faust/rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
+The [rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
 
 ## DSP examples
 
