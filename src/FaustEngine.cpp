@@ -94,8 +94,10 @@ struct RackUI : public GenericUI {
 	}
 
 	void addButton(const char* label, FAUSTFLOAT* zone) override {
-		int index = getIndex(fValue);
-		if (fKey == "switch" && (index != -1)) {
+        int index = getIndex(fValue);
+        if (index == -1) return;
+        
+		if (fKey == "switch") {
 			fUpdateFunIn.push_back([ = ](ProcessBlock * block) {
 				*zone = block->switches[index - 1];
             });
@@ -105,7 +107,9 @@ struct RackUI : public GenericUI {
 
 	void addCheckButton(const char* label, FAUSTFLOAT* zone) override {
 		int index = getIndex(fValue);
-		if (fKey == "switch" && (index != -1)) {
+        if (index == -1) return;
+        
+		if (fKey == "switch") {
 			// Add a checkbox
 			fCheckBoxes[zone] = CheckBox();
 			// Update function
@@ -133,7 +137,7 @@ struct RackUI : public GenericUI {
 
 	void addNumEntry(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT init, FAUSTFLOAT min, FAUSTFLOAT max, FAUSTFLOAT step) override {
 		int index = getIndex(fValue);
-		if (fKey == "knob" && (index != -1)) {
+		if (fKey == "knob") {
 			ConverterZoneControl* converter;
 			if (fScale == "log") {
 				converter = new ConverterZoneControl(zone, new LogValueConverter(0., 1., min, max));
@@ -154,33 +158,35 @@ struct RackUI : public GenericUI {
 	}
 
 	void addBarGraph(FAUSTFLOAT* zone) {
-		int index = getIndex(fValue);
-		if ((fKey == "light_red") && (index != -1)) {
+        int index = getIndex(fValue);
+        if (index == -1) return;
+        
+		if ((fKey == "light_red")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->lights[index - 1][0] = *zone;
 			});
 		}
-		else if ((fKey == "light_green") && (index != -1)) {
+		else if ((fKey == "light_green")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->lights[index - 1][1] = *zone;
 			});
 		}
-		else if ((fKey == "light_blue") && (index != -1)) {
+		else if ((fKey == "light_blue")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->lights[index - 1][2] = *zone;
 			});
 		}
-		else if ((fKey == "switchlight_red") && (index != -1)) {
+		else if ((fKey == "switchlight_red")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->switchLights[index - 1][0] = *zone;
 			});
 		}
-		else if ((fKey == "switchlight_green") && (index != -1)) {
+		else if ((fKey == "switchlight_green")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->switchLights[index - 1][1] = *zone;
 			});
 		}
-		else if ((fKey == "switchlight_blue") && (index != -1)) {
+		else if ((fKey == "switchlight_blue")) {
 			fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
 				block->switchLights[index - 1][2] = *zone;
 			});
@@ -212,7 +218,7 @@ struct RackUI : public GenericUI {
 	}
 };
 
-// Faust engine using libfaust/LLVM
+// Faust engine using libfaust + LLVM or Interp backends
 class FaustEngine : public ScriptEngine {
 
 public:
