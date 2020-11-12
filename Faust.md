@@ -2,12 +2,12 @@
 
 The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly.
 
-## Compilation
+## Compilation and installation
 
-- type `make dep && make && make install` to build it
+- type `make dep && make && make install`  to build and install the module
 - you can now add a Faust aware VCV Prototype in your Rack session and start coding in Faust
 
-## Loading/editing/compiling .dsp files
+## Loading/editing/compiling DSP files
 
 Faust DSP files have to be loaded in VCV Prototype and edited in a external editor (Visual Studio Code, Atom...). Each time the file is saved, it will be recompiled and executed. To possibly save compilation time, the DSP machine code is saved in a cache, and possibly restored the next time the session will be loaded.
 

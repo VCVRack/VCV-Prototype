@@ -1,5 +1,4 @@
 // Voltage-controlled oscillator example
-
 import("stdfaust.lib");
 
 // Create a phasor with a given frequency

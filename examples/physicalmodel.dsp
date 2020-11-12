@@ -1,6 +1,8 @@
 import("stdfaust.lib");
 import("rack.lib");
 
+// Using metadata, one switch and five knobs are used to control the model
+
 frenchBell_ui = pm.frenchBell(strikePosition,strikeCutoff,strikeSharpness,gain,gate)
 with {
   	strikePosition = nentry("v:frenchBell/[0]strikePosition", 0,0,4,1);
