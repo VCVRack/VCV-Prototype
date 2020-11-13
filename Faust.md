@@ -25,11 +25,11 @@ So a button or checkbox UI item can use the `[switch:N]` metadata to be associat
 Other metadata:
 - `[scale:lin|log|exp]` metadata is implemented.
 
-The [rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
+The [rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert CV signals, and can be enriched if needed. 
 
 ## DSP examples
 
-Here is a simple example showing how oscillators can be controlled by UI items:
+Here is a simple example showing how oscillators can be controlled by GUI items, associated with metadata in the DSP code:
 
 ```
 import("stdfaust.lib");
@@ -40,8 +40,10 @@ gain = hslider("gain [knob:2]", 0.5, 0, 1, 0.01);
 gate = button("gate [switch:1]");
 
 // DSP processor
-process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
+process = os.osc(freq) * gain * 5, os.sawtooth(freq) * gain * gate * 5;
 ```
+
+Following the VCV Prototype model, note that audio outputs **are multipled by 5** to follow the [-5v..5v] range convention. 
 
 The standard examples ported to Faust can be seen in the examples folder:
 

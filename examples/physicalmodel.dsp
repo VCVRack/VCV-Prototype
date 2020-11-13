@@ -43,4 +43,4 @@ with {
 		between 0 and 1 with 1 for the maximum amount of reverb.]", 0.3333, 0, 1, 0.025));
 };
 
-process = frenchBell_ui <: freeverb_demo;
+process = frenchBell_ui <: freeverb_demo : *(5),*(5);

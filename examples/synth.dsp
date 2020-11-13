@@ -31,4 +31,4 @@ swl_red(i) = vbargraph("[switchlight_red:%i]", 0, 1);
 swl_green(i) = vbargraph("[switchlight_green:%i]", 0, 1);
 swl_blue(i) = vbargraph("[switchlight_blue:%i]", 0, 1);
 
-process = os.osc(freq1) * vol1, os.sawtooth(freq2) * vol2 * gate, os.square(freq2) * vol2 * check;
+process = os.osc(freq1) * vol1 * 5, os.sawtooth(freq2) * vol2 * gate * 5, os.square(freq2) * vol2 * check * 5;

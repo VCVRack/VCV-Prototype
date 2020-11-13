@@ -18,7 +18,7 @@ Additive synth: 3 sine oscillators with adsr envelop.
 Use the 3 first VC inputs to control pitch, gate and velocity.
 */
 
-process(pitch, gate, vel) = voice(freq) * en.adsr(attack, decay, sustain, release, gate) * vel : *(vol) : panner(pan)
+process(pitch, gate, vel) = voice(freq) * en.adsr(attack, decay, sustain, release, gate) * vel : *(vol) : panner(pan) : *(5),*(5)
 with {
 	freq = cv_pitch2freq(pitch);	
 };
