@@ -159,49 +159,53 @@ struct RackUI : public GenericUI {
         fKey = fValue = "";
     }
     
-    void addBarGraph(FAUSTFLOAT* zone) {
+    void addBarGraph(FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max) {
         int index = getIndex(fValue);
         if (index == -1) return;
         
+        ConverterZoneControl* converter = new ConverterZoneControl(zone, new LinearValueConverter(0., 1., min, max));
+        
         if ((fKey == "light_red")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->lights[index - 1][0] = *zone;
+                block->lights[index - 1][0] = converter->getConverter()->faust2ui(*zone);
             });
         }
         else if ((fKey == "light_green")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->lights[index - 1][1] = *zone;
+                block->lights[index - 1][1] = converter->getConverter()->faust2ui(*zone);
             });
         }
         else if ((fKey == "light_blue")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->lights[index - 1][2] = *zone;
+                block->lights[index - 1][2] = converter->getConverter()->faust2ui(*zone);
             });
         }
         else if ((fKey == "switchlight_red")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->switchLights[index - 1][0] = *zone;
+                block->switchLights[index - 1][0] = converter->getConverter()->faust2ui(*zone);
             });
         }
         else if ((fKey == "switchlight_green")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->switchLights[index - 1][1] = *zone;
+                block->switchLights[index - 1][1] = converter->getConverter()->faust2ui(*zone);
             });
         }
         else if ((fKey == "switchlight_blue")) {
             fUpdateFunOut.push_back([ = ](ProcessBlock * block) {
-                block->switchLights[index - 1][2] = *zone;
+                block->switchLights[index - 1][2] = converter->getConverter()->faust2ui(*zone);
             });
         }
+        
+        fConverters.push_back(converter);
         fKey = fValue = "";
     }
     
     void addHorizontalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max) override {
-        addBarGraph(zone);
+        addBarGraph(zone, min, max);
     }
     
     void addVerticalBargraph(const char* label, FAUSTFLOAT* zone, FAUSTFLOAT min, FAUSTFLOAT max) override {
-        addBarGraph(zone);
+        addBarGraph(zone, min, max);
     }
     
     void addSoundfile(const char* label, const char* soundpath, Soundfile** sf_zone) override {
