@@ -11,6 +11,8 @@ The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Protot
 
 Faust DSP files have to be loaded in VCV Prototype and edited in a external editor (Visual Studio Code, Atom...). Each time the file is saved, it will be recompiled and executed. To possibly save compilation time, the DSP machine code is saved in a cache, and possibly restored the next time the session will be loaded.
 
+The 6 audio inputs/outputs can be accessed in order in the Faust DSP which can thus use up to 6 channels.
+
 The 6 *switches*, *knobs* as well as the *lights* and *switchLights* can be connected to UI controllers using metadata:
 
 - `[switch:N]` (with N from 1 to 6) has to be used in a `button` or `checkbox` item to connect it to the prototype interface switch number N
