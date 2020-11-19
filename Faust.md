@@ -29,6 +29,8 @@ Other metadata:
 
 The [rack.lib](https://github.com/VCVRack/VCV-Prototype/blob/faust/res/faust/rack.lib) Faust library contains usefull functions to convert CV signals, and can be enriched if needed. 
 
+Note that **only monophonic DSP programs** can be described. 
+
 ## DSP examples
 
 Here is a simple example showing how oscillators can be controlled by GUI items, associated with metadata in the DSP code:

@@ -1,7 +1,7 @@
 import("stdfaust.lib");
 import("rack.lib");
 
-vol = hslider("vol [knob:1]", 0.3, 0, 10, 0.01);	
+vol = hslider("vol [knob:1]", 0.3, -70, 5, 0.01) : ba.db2linear;	
 pan = hslider("pan [knob:2]", 0.5, 0, 1, 0.01);	
 
 attack = hslider("attack", 0.01, 0, 1, 0.001);	
