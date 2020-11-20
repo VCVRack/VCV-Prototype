@@ -11,7 +11,7 @@ with {
   	
   	// Connection with VCV knob and switch
 	gain = hslider("v:frenchBell/[3]gain [knob:1]",1,0,1,0.01);
-	gate = button("v:frenchBell/[4]gate [switch:1]");
+	gate = button("v:frenchBell/[4]gate [switch:1]") : hbargraph("[switchlight_red:1]", 0, 1);
 };
 
 freeverb_demo = _,_ <: (*(g)*fixedgain,*(g)*fixedgain : 
