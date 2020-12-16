@@ -1,6 +1,7 @@
 # Using Faust DSP language in VCV Prototype 
 
-The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly.
+The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The Faust compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly. 
+To facilitate the deployment of the Faust aware VCV Prototype, the (slower) interpreter backend is currently used instead of the (faster) LLVM backend. 
 
 ## Compilation and installation
 
