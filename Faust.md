@@ -1,4 +1,4 @@
-# Using Faust DSP language in VCV Prototype 
+# Using Faust DSP language in VCV Prototype
 
 The [Faust audio DSP language](https://faust.grame.fr) can be used in VCV Prototype. The compiler can be embedded in applications or plugins using [libfaust](https://faustdoc.grame.fr/manual/embedding/), and DSP code can be edited and JIT compiled on the fly.
 
@@ -21,7 +21,7 @@ The 6 *switches*, *knobs* as well as the *lights* and *switchLights* can be conn
 Other metadata:
 - `[scale:lin|log|exp]` metadata is implemented.
 
-The [faust_libraries/rack.lib](https://github.com/sletz/VCV-Prototype/blob/master/faust_libraries/rack.lib) Faust library contains usefull functions to convert VC signals, and can be enriched if needed. 
+The [faust_libraries/rack.lib](https://github.com/sletz/VCV-Prototype/blob/master/faust_libraries/rack.lib) Faust library contains useful functions to convert VC signals, and can be enriched if needed.
 
 ## DSP examples
 
