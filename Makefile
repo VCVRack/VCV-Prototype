@@ -212,6 +212,7 @@ FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
 
+
 # LibPD
 ifeq ($(LIBPD), 1)
 libpd := dep/lib/libpd.a
@@ -255,6 +256,7 @@ SOURCES += src/FaustEngine.cpp
 OBJECTS += $(libfaust)
 DEPS += $(libfaust)
 FLAGS += -DINTERP
+DISTRIBUTABLES += faust_libraries
 
 # Test using LLVM
 #LDFLAGS += -L/usr/local/lib -lfaust
@@ -267,7 +269,9 @@ $(libfaust):
 	cd dep/faust && git checkout 1dfc452a8250f3123b5100edf8c882e1cea407a1
 	cd dep/faust/build && make cmake BACKENDS=interp.cmake TARGETS=interp.cmake
 	cd dep/faust/build && make install PREFIX="$(DEP_PATH)"
-	cp -rf dep/faust/libraries/* res/faust/
+	cp -r dep/faust/libraries/* faust_libraries/
+	rm -rf faust_libraries/doc
+	rm -rf faust_libraries/docs
 
 endif
 
