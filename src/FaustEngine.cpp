@@ -50,7 +50,7 @@
 extern rack::Plugin* pluginInstance;
 
 // UI handler for switches, knobs and lights
-struct RackUI : public GenericUI {
+struct PrototypeUI : public GenericUI {
 	typedef std::function<void(ProcessBlock* block)> updateFunction;
 
 	std::vector<ConverterZoneControl*> fConverters;
@@ -81,10 +81,10 @@ struct RackUI : public GenericUI {
 		}
 	}
 
-	RackUI(): fScale("lin")
+	PrototypeUI(): fScale("lin")
 	{}
 
-	virtual ~RackUI() {
+	virtual ~PrototypeUI() {
 		for (auto& it : fConverters)
 			delete it;
 	}
@@ -245,13 +245,13 @@ public:
 
 	int run(const std::string& path, const std::string& script) override {
 #if defined ARCH_LIN
-		std::string temp_cache = "/var/tmp/VCV_" + generateSHA1(script);
+		std::string temp_cache = "/tmp/VCVPrototype_" + generateSHA1(script);
 #elif defined ARCH_MAC
-		std::string temp_cache = "/private/var/tmp/VCV_" + generateSHA1(script);
+		std::string temp_cache = "/tmp/VCVPrototype_" + generateSHA1(script);
 #elif defined ARCH_WIN
 		char buf[MAX_PATH + 1] = {0};
 		GetTempPath(sizeof(buf), buf);
-		std::string temp_cache = std::string(buf) + "/VCV_" + generateSHA1(script);
+		std::string temp_cache = std::string(buf) + "/VCVPrototype_" + generateSHA1(script);
 #endif
 		std::string error_msg;
 
@@ -326,7 +326,7 @@ public:
 		}
 
 		// Setup UI
-		fDSP->buildUserInterface(&fRackUI);
+		fDSP->buildUserInterface(&fPrototypeUI);
 
 		setFrameDivider(1);
 		setBufferSize(kBufferSize);
@@ -345,14 +345,14 @@ public:
 		}
 
 		// Update inputs controllers
-		for (auto& it : fRackUI.fUpdateFunIn)
+		for (auto& it : fPrototypeUI.fUpdateFunIn)
 			it(block);
 
 		// Compute samples
 		fDSP->compute(block->bufferSize, fInputs, fOutputs);
 
 		// Update output controllers
-		for (auto& it : fRackUI.fUpdateFunOut)
+		for (auto& it : fPrototypeUI.fUpdateFunOut)
 			it(block);
 
 		return 0;
@@ -363,7 +363,7 @@ private:
 	dsp* fDSP;
 	FAUSTFLOAT** fInputs;
 	FAUSTFLOAT** fOutputs;
-	RackUI fRackUI;
+	PrototypeUI fPrototypeUI;
 	std::string fDSPLibraries;
 };
 
