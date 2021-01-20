@@ -12,6 +12,7 @@ Supported scripting languages:
 - [Lua](https://www.lua.org/) (.lua)
 - [Vult](https://github.com/modlfo/vult) (.vult)
 - [Pure Data](https://puredata.info) (.pd)
+- [Faust](https://faust.grame.fr) (.dsp)
 - [Add your own below](#adding-a-script-engine)
 
 [Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
@@ -150,4 +151,5 @@ make
 - [Jerry Sievert](https://github.com/JerrySievert): QuickJS (JavaScript)
 - [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
 - [CHAIR](https://chair.audio) (Clemens Wegener, Max Neupert): libpd
+- [GRAME](https://github.com/grame-cncm): Faust
 - add your name here
