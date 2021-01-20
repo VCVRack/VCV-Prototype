@@ -233,17 +233,17 @@ ifdef ARCH_WIN
 endif
 
 $(libpd):
-	cd dep && git clone "https://github.com/chairaudio/libpd.git" --recursive
-	cd dep/libpd && git checkout fe1a0d08979efd5fc46590108845b235cb824634
+	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
+	cd dep/libpd && git checkout 551f7512e8f934ea8e2a20af9467581a5825b9cd
 
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
 	# So in order for Mac 10.15 (for example) to make a build that works on Mac 10.7+, we have to manually add DEP_MAC_SDK_FLAGS to CFLAGS and LDFLAGS.
 	# We can't just add the environment's CFLAGS/LDFLAGS because `-march=nocona` makes libpd segfault when initialized.
 	# Perhaps inline assembly is used in libpd? Who knows.
-	cd dep/libpd && $(MAKE) MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long" $(DEP_MAC_SDK_FLAGS) -stdlib=libc++' ADDITIONAL_LDFLAGS='$(DEP_MAC_SDK_FLAGS) -stdlib=libc++'
+	cd dep/libpd && $(MAKE) MULTI=true STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long" $(DEP_MAC_SDK_FLAGS) -stdlib=libc++' ADDITIONAL_LDFLAGS='$(DEP_MAC_SDK_FLAGS) -stdlib=libc++'
 else
-	cd dep/libpd && $(MAKE) MULTI=true BUILD_LIBPD_STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
+	cd dep/libpd && $(MAKE) MULTI=true STATIC=true ADDITIONAL_CFLAGS='-DPD_LONGINTTYPE="long long"'
 endif
 	cd dep/libpd && $(MAKE) install prefix="$(DEP_PATH)"
 endif
