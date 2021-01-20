@@ -98,6 +98,10 @@ See `examples/template.vult` for a reference of the Vult API.*
 
 ## Build dependencies
 
+Set up your buld environment like described here, including the dependencies: https://vcvrack.com/manual/Building
+
+Additionally:
+
 ### Windows
 ```bash
 pacman -S mingw-w64-x86_64-premake
