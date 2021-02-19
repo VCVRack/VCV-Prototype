@@ -222,11 +222,11 @@ DEPS += $(libpd)
 FLAGS += -Idep/include/libpd -DHAVE_LIBDL
 
 ifdef ARCH_WIN
-	# the PD_INTERNAL leaves the function declarations for libpd unchanged
+	# PD_INTERNAL leaves the function declarations for libpd unchanged
 	# not specifying that flag would enable the  "EXTERN __declspec(dllexport) extern" macro
-	# which throughs a linker error. I guess this macro should only be used for the windows
+	# which throws a linker error. I guess this macro should only be used for the windows
 	# specific .dll dynamic linking format.
-	# The corresponding #define resides in "m_pd.h" inside pure data sources
+	# The corresponding #define resides in "m_pd.h" inside th Pure Data sources
 	FLAGS += -DPD_INTERNAL
 	LDFLAGS += -Wl,--export-all-symbols
 	LDFLAGS += -lws2_32
