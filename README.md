@@ -13,6 +13,7 @@ Supported scripting languages:
 - [Vult](https://github.com/modlfo/vult) (.vult)
 - [Pure Data](https://puredata.info) (.pd)
 - [Faust](https://faust.grame.fr) (.dsp)
+- [SuperCollider](https://supercollider.github.io) (.scd)
 - [Add your own below](#adding-a-script-engine)
 
 [Discussion thread](https://community.vcvrack.com/t/vcv-prototype/3271)
