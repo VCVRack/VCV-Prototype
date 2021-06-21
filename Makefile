@@ -210,20 +210,20 @@ OBJECTS += $(libpd)
 DEPS += $(libpd)
 FLAGS += -Idep/include/libpd -DHAVE_LIBDL
 
+$(libpd):
+	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
+	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
+
 ifdef ARCH_WIN
 	# PD_INTERNAL leaves the function declarations for libpd unchanged
 	# not specifying that flag would enable the  "EXTERN __declspec(dllexport) extern" macro
 	# which throws a linker error. I guess this macro should only be used for the windows
 	# specific .dll dynamic linking format.
 	# The corresponding #define resides in "m_pd.h" inside th Pure Data sources
-	FLAGS += -DPD_INTERNAL
+	FLAGS += -DPD_INTERNAL -Ofast
 	LDFLAGS += -Wl,--export-all-symbols
 	LDFLAGS += -lws2_32
 endif
-
-$(libpd):
-	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
-	cd dep/libpd && git checkout 551f7512e8f934ea8e2a20af9467581a5825b9cd
 
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
