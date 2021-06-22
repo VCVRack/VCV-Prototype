@@ -157,4 +157,5 @@ make
 - [Leonardo Laguna Ruiz](https://github.com/modlfo): Vult
 - [CHAIR](https://chair.audio) (Clemens Wegener, Max Neupert): libpd
 - [GRAME](https://github.com/grame-cncm): Faust
+- [Brian Heim](https://github.com/brianlheim): Supercollider
 - add your name here
