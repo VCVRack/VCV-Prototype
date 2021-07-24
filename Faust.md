@@ -43,6 +43,6 @@ process = os.osc(freq) * gain, os.sawtooth(freq) * gain * gate;
 
 Some additional files can be seen in the examples folder:
 
-- [synth.dsp](https://github.com/VCV-Prototype/blob/master/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
-- [organ.dsp](https://github.com/VCV-Prototype/blob/master/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
-- [physicalmodel.dsp](https://github.com/VCV-Prototype/blob/master/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
+- [synth.dsp](https://github.com/VCV-Prototype/blob/v1/examples/synth.dsp) demonstrates how to use all different VCV Prototype UI items
+- [organ.dsp](https://github.com/VCV-Prototype/blob/v1/examples/organ.dsp) demonstrates a MIDI controllable additive synthesis based organ
+- [physicalmodel.dsp](https://github.com/VCVRack/VCV-Prototype/blob/v1/examples/physicalmodel.dsp) demonstrates a modal synthesis based bell connected to a reverb
