@@ -29,14 +29,27 @@ endif
 
 
 # Entropia File System Watcher
-efsw := dep/lib/libefsw-static-release.a
+ifdef ARCH_WIN
+	efsw := dep/lib/efsw-static-release.lib
+else
+	efsw := dep/lib/libefsw-static-release.a
+endif
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
+ifdef ARCH_WIN
+	cd efsw && premake5 gmake
+	cd efsw && $(MAKE) -C make/* config=release_x86_64 efsw-static-lib
+else
 	cd efsw && premake4 gmake
 	cd efsw && $(MAKE) -C make/* config=release efsw-static-lib
+endif
 	mkdir -p dep/lib dep/include
+ifdef ARCH_WIN
+	cd efsw && cp lib/efsw-static-release.lib $(DEP_PATH)/lib/
+else
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
+endif
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
 
