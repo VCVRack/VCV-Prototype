@@ -210,10 +210,6 @@ OBJECTS += $(libpd)
 DEPS += $(libpd)
 FLAGS += -Idep/include/libpd -DHAVE_LIBDL
 
-$(libpd):
-	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
-	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
-
 ifdef ARCH_WIN
 	# PD_INTERNAL leaves the function declarations for libpd unchanged
 	# not specifying that flag would enable the  "EXTERN __declspec(dllexport) extern" macro
@@ -225,6 +221,10 @@ ifdef ARCH_WIN
 	LDFLAGS += -lws2_32
 endif
 
+$(libpd):
+	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
+	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
+	
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
 	# So in order for Mac 10.15 (for example) to make a build that works on Mac 10.7+, we have to manually add DEP_MAC_SDK_FLAGS to CFLAGS and LDFLAGS.
