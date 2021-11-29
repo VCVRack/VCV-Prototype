@@ -1,16 +1,15 @@
 {
   "slug": "VCV-Prototype",
-  "name": "Prototype",
-  "version": "1.3.0",
+  "name": "VCV Prototype",
+  "version": "2.3.0",
   "license": "GPL-3.0-or-later",
   "brand": "VCV",
   "author": "VCV",
-  "authorEmail": "contact@vcvrack.com",
+  "authorEmail": "support@vcvrack.com",
   "authorUrl": "https://vcvrack.com/",
-  "pluginUrl": "https://vcvrack.com/Prototype.html",
-  "manualUrl": "https://vcvrack.com/Prototype.html#manual",
+  "pluginUrl": "https://vcvrack.com/Prototype",
+  "manualUrl": "https://vcvrack.com/Prototype#manual",
   "sourceUrl": "https://github.com/VCVRack/VCV-Prototype",
-  "donateUrl": "",
   "changelogUrl": "https://github.com/VCVRack/VCV-Prototype/blob/master/CHANGELOG.md",
   "modules": [
     {
