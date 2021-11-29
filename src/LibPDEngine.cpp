@@ -88,8 +88,8 @@ struct LibPDEngine : ScriptEngine {
 
 		display(version);
 
-		std::string name = string::filename(path);
-		std::string dir  = string::directory(path);
+		std::string name = system::getFilename(path);
+		std::string dir  = system::getDirectory(path);
 		libpd_openfile(name.c_str(), dir.c_str());
 
 		sendInitialStates(block);

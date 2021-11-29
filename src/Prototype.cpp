@@ -287,7 +287,7 @@ struct Prototype : Module {
 			return;
 
 		// Watch file
-		std::string dir = string::directory(path);
+		std::string dir = system::getDirectory(path);
 		efsw = efsw_create(false);
 		efsw_addwatch(efsw, dir.c_str(), watchCallback, false, this);
 		efsw_watch(efsw);
@@ -331,7 +331,7 @@ struct Prototype : Module {
 		this->script = script;
 
 		// Create script engine from path extension
-		std::string extension = string::filenameExtension(string::filename(path));
+		std::string extension = system::getExtension(path);
 		scriptEngine = createScriptEngine(extension);
 		if (!scriptEngine) {
 			message = string::f("No engine for .%s extension", extension.c_str());
@@ -353,7 +353,7 @@ struct Prototype : Module {
 		Prototype* that = (Prototype*) param;
 		if (action == EFSW_ADD || action == EFSW_DELETE || action == EFSW_MODIFIED || action == EFSW_MOVED) {
 			// Check filename
-			std::string pathFilename = string::filename(that->path);
+			std::string pathFilename = system::getFilename(that->path);
 			if (pathFilename == filename) {
 				that->loadPath();
 			}
@@ -409,7 +409,7 @@ struct Prototype : Module {
 		std::string ext = "js";
 		// Get current extension if a script is currently loaded
 		if (!path.empty()) {
-			ext = string::filenameExtension(string::filename(path));
+			ext = system::getExtension(path);
 		}
 		std::string dir = asset::plugin(pluginInstance, "examples");
 		std::string filename = "Untitled." + ext;
@@ -424,7 +424,7 @@ struct Prototype : Module {
 		setPath("");
 
 		// Get extension of requested filename
-		ext = string::filenameExtension(string::filename(newPath));
+		ext = system::getExtension(newPath);
 		if (ext == "") {
 			message = "File extension required";
 			return;
@@ -466,7 +466,7 @@ struct Prototype : Module {
 		if (script == "")
 			return;
 
-		std::string ext = string::filenameExtension(string::filename(path));
+		std::string ext = system::getExtension(path);
 		std::string dir = asset::plugin(pluginInstance, "examples");
 		std::string filename = "Untitled." + ext;
 		char* newPathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
@@ -476,7 +476,7 @@ struct Prototype : Module {
 		std::string newPath = newPathC;
 		std::free(newPathC);
 		// Add extension if user didn't specify one
-		std::string newExt = string::filenameExtension(string::filename(newPath));
+		std::string newExt = system::getExtension(newPath);
 		if (newExt == "")
 			newPath += "." + ext;
 
@@ -594,7 +594,7 @@ struct Prototype : Module {
 		if (path == "")
 			return "";
 		// HACK check if extension is .pd
-		if (string::filenameExtension(string::filename(path)) == "pd")
+		if (system::getExtension(path) == "pd")
 			return settingsPdEditorPath;
 		return settingsEditorPath;
 	}
@@ -625,7 +625,7 @@ struct FileChoice : LedDisplayChoice {
 			text = "Script";
 		text += ": ";
 		if (module && module->path != "")
-			text += string::filename(module->path);
+			text += system::getFilename(module->path);
 		else
 			text += "(click to load)";
 	}
@@ -646,7 +646,8 @@ struct MessageChoice : LedDisplayChoice {
 
 	void draw(const DrawArgs& args) override {
 		nvgScissor(args.vg, RECT_ARGS(args.clipBox));
-		if (font->handle >= 0) {
+		std::shared_ptr<Font> font = APP->window->loadFont(fontPath);
+		if (font && font->handle >= 0) {
 			nvgFillColor(args.vg, color);
 			nvgFontFaceId(args.vg, font->handle);
 			nvgTextLetterSpacing(args.vg, 0.0);
