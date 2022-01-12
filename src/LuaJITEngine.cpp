@@ -246,5 +246,5 @@ struct LuaJITEngine : ScriptEngine {
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<LuaJITEngine>("lua");
+	addScriptEngine<LuaJITEngine>(".lua");
 }

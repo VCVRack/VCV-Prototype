@@ -329,5 +329,5 @@ struct QuickJSEngine : ScriptEngine {
 
 __attribute__((constructor(1000)))
 static void constructor() {
-  addScriptEngine<QuickJSEngine>("js");
+  addScriptEngine<QuickJSEngine>(".js");
 }
