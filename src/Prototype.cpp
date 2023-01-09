@@ -334,7 +334,7 @@ struct Prototype : Module {
 		std::string extension = system::getExtension(path);
 		scriptEngine = createScriptEngine(extension);
 		if (!scriptEngine) {
-			message = string::f("No engine for .%s extension", extension.c_str());
+			message = string::f("No engine for %s extension", extension.c_str());
 			return;
 		}
 		scriptEngine->module = this;
@@ -406,13 +406,13 @@ struct Prototype : Module {
 	}
 
 	void newScriptDialog() {
-		std::string ext = "js";
+		std::string ext = ".js";
 		// Get current extension if a script is currently loaded
 		if (!path.empty()) {
 			ext = system::getExtension(path);
 		}
 		std::string dir = asset::plugin(pluginInstance, "examples");
-		std::string filename = "Untitled." + ext;
+		std::string filename = "Untitled" + ext;
 		char* newPathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
 		if (!newPathC) {
 			return;
@@ -436,7 +436,7 @@ struct Prototype : Module {
 		}
 
 		// Copy template to new script
-		std::string templatePath = asset::plugin(pluginInstance, "examples/template." + ext);
+		std::string templatePath = asset::plugin(pluginInstance, "examples/template" + ext);
 		{
 			std::ifstream templateFile(templatePath, std::ios::binary);
 			std::ofstream newFile(newPath, std::ios::binary);
@@ -468,7 +468,7 @@ struct Prototype : Module {
 
 		std::string ext = system::getExtension(path);
 		std::string dir = asset::plugin(pluginInstance, "examples");
-		std::string filename = "Untitled." + ext;
+		std::string filename = "Untitled" + ext;
 		char* newPathC = osdialog_file(OSDIALOG_SAVE, dir.c_str(), filename.c_str(), NULL);
 		if (!newPathC) {
 			return;
@@ -478,7 +478,7 @@ struct Prototype : Module {
 		// Add extension if user didn't specify one
 		std::string newExt = system::getExtension(newPath);
 		if (newExt == "")
-			newPath += "." + ext;
+			newPath += ext;
 
 		// Write and close file
 		{
@@ -594,7 +594,7 @@ struct Prototype : Module {
 		if (path == "")
 			return "";
 		// HACK check if extension is .pd
-		if (system::getExtension(path) == "pd")
+		if (system::getExtension(path) == ".pd")
 			return settingsPdEditorPath;
 		return settingsEditorPath;
 	}

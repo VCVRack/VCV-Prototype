@@ -252,5 +252,5 @@ struct PythonEngine : ScriptEngine {
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<PythonEngine>("py");
+	addScriptEngine<PythonEngine>(".py");
 }

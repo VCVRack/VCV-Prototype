@@ -369,5 +369,5 @@ private:
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<FaustEngine>("dsp");
+	addScriptEngine<FaustEngine>(".dsp");
 }

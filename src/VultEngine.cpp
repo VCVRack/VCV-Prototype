@@ -150,5 +150,5 @@ struct VultEngine : ScriptEngine {
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<VultEngine>("vult");
+	addScriptEngine<VultEngine>(".vult");
 }
