@@ -38,14 +38,24 @@ ifeq (, $(shell which premake4))
 else
 	PREMAKE = premake4
 endif
-efsw := dep/lib/libefsw-static-release.a
+ifdef ARCH_WIN
+	efsw := dep/lib/efsw-static-release.lib
+else
+	efsw := dep/lib/libefsw-static-release.a
+endif
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
 	cd efsw && $(PREMAKE) gmake
+ifdef ARCH_WIN
+	cd efsw && $(MAKE) -C make/* config=release_x86_64 efsw-static-lib
+	mkdir -p dep/lib dep/include
+	cd efsw && cp lib/efsw-static-release.lib $(DEP_PATH)/lib/
+else
 	cd efsw && $(MAKE) -C make/* config=release efsw-static-lib
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
+endif
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
 
