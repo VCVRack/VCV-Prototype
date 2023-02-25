@@ -29,11 +29,20 @@ endif
 
 
 # Entropia File System Watcher
+ifeq (, $(shell which premake4))
+	ifeq (, $(shell which premake5))
+		$(error premake is not installed. Please install either premake4 or premake5)
+	else
+		PREMAKE = premake5
+	endif
+else
+	PREMAKE = premake4
+endif
 efsw := dep/lib/libefsw-static-release.a
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
-	cd efsw && premake4 gmake
+	cd efsw && $(PREMAKE) gmake
 	cd efsw && $(MAKE) -C make/* config=release efsw-static-lib
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
@@ -74,14 +83,13 @@ endif
 # LuaJIT
 ifeq ($(LUAJIT), 1)
 SOURCES += src/LuaJITEngine.cpp
-luajit := dep/lib/libluajit-5.1.a
+luajit := dep/LuaJIT/src/libluajit.a
 OBJECTS += $(luajit)
 DEPS += $(luajit)
 $(luajit):
-	$(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
-	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
-	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
-	cd dep/LuaJIT-2.0.5 && $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
+	cd dep && git clone "https://github.com/LuaJIT/LuaJIT.git"
+	cd dep/LuaJIT && git checkout v2.1
+	cd dep/LuaJIT && MACOSX_DEPLOYMENT_TARGET=10.9 $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
 endif
 
 
