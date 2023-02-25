@@ -11,7 +11,7 @@
 
 // Special version of createScriptEngine that only creates Lua engines
 ScriptEngine* createLuaEngine() {
-	auto it = scriptEngineFactories.find("lua");
+	auto it = scriptEngineFactories.find(".lua");
 	if (it == scriptEngineFactories.end())
 		return NULL;
 	return it->second->createScriptEngine();
@@ -119,7 +119,7 @@ struct VultEngine : ScriptEngine {
 		JSValue luacode = JS_GetPropertyStr(ctx, first, "code");
 		std::string luacode_str(JS_ToCString(ctx, luacode));
 
-		//WARN("Generated Code: %s", luacode_str.c_str());
+		WARN("Generated Code: %s", luacode_str.c_str());
 
 		luaEngine = createLuaEngine();
 
