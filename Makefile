@@ -195,7 +195,7 @@ SOURCES += src/VultEngine.cpp
 vult := dep/vult/vultc.h
 $(vult):
 	cd dep && mkdir -p vult
-	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.12/vultc.h"
+	cd dep/vult && $(WGET) "https://github.com/vult-dsp/vult/releases/download/v0.4.12/vultc.h"
 	$(SHA256) $(vult) 3e80f6d30defe7df2804568f0314dbb33e6bf69d53d18a804c8b8132cf5ad146
 FLAGS += -Idep/vult
 DEPS += $(vult)
@@ -224,7 +224,7 @@ endif
 $(libpd):
 	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
 	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
-	
+
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
 	# So in order for Mac 10.15 (for example) to make a build that works on Mac 10.7+, we have to manually add DEP_MAC_SDK_FLAGS to CFLAGS and LDFLAGS.
