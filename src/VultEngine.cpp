@@ -26,7 +26,10 @@ struct VultEngine : ScriptEngine {
 	JSRuntime* rt = NULL;
 	JSContext* ctx = NULL;
 
+	bool js_failure;
+
 	VultEngine() {
+		js_failure = false;
 		rt = JS_NewRuntime();
 		// Create QuickJS context
 		ctx = JS_NewContext(rt);
@@ -41,9 +44,11 @@ struct VultEngine : ScriptEngine {
 		JSValue val =
 		  JS_Eval(ctx, (const char*)vultc_h, vultc_h_size, "vultc.js", 0);
 		if (JS_IsException(val)) {
-			display("Error loading the Vult compiler");
+			WARN("Error loading the Vult compiler");
+			WARN("%s", JS_ToCString(ctx, JS_ToString(ctx,val)));
 			JS_FreeValue(ctx, val);
 			JS_FreeValue(ctx, global_obj);
+			js_failure = true;
 			return;
 		}
 	}
@@ -62,6 +67,11 @@ struct VultEngine : ScriptEngine {
 	}
 
 	int run(const std::string& path, const std::string& script) override {
+		if (js_failure) {
+			display("Error loading the Vult compiler");
+			return -1;
+		}
+
 		display("Loading...");
 
 		JSValue global_obj = JS_GetGlobalObject(ctx);
@@ -142,8 +152,8 @@ struct VultEngine : ScriptEngine {
 	}
 
 	int process() override {
-		if (!luaEngine)
-      return -1;
+		if (!luaEngine || js_failure)
+      		return -1;
 		return luaEngine->process();
 	}
 };
