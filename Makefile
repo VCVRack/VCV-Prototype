@@ -104,8 +104,8 @@ DEPS += $(supercollider)
 DISTRIBUTABLES += dep/supercollider/SCClassLibrary
 DISTRIBUTABLES += support/supercollider_extensions
 SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=0 -DSC_EL=0 -DSC_VIM=0 -DSC_ED=0 -DSC_IDE=0 -DSC_ABLETON_LINK=0 -DSC_QT=0 -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=0 -DBUILD_TESTING=0 -DNO_LIBSNDFILE=1
-SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio_sc_org external_libraries/yaml-cpp
-SUPERCOLLIDER_BRANCH := topic/vcv-prototype-support
+SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio/portaudio_submodule external_libraries/yaml-cpp
+SUPERCOLLIDER_BRANCH := 3.12
 
 OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
 OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
@@ -120,7 +120,7 @@ LDFLAGS += -lpthread -lasound -ludev
 
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 1
-	cd dep/supercollider && git checkout 84b14d10d49edce6dd8303045a884fb7f2bc92e8
+	cd dep/supercollider && git checkout 3a6eabc84ed63ac4ae1f3e8aa27d942d46262d54
 	cd dep/supercollider && git submodule update --depth 1 --init -- $(SUPERCOLLIDER_SUBMODULES)
 	cd dep/supercollider && mkdir build
 	cd dep/supercollider/build && $(CMAKE) .. $(SUPERCOLLIDER_CMAKE_FLAGS)
