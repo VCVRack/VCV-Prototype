@@ -226,7 +226,7 @@ libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
 OBJECTS += $(libpd)
 DEPS += $(libpd)
-FLAGS += -Idep/include/libpd -DHAVE_LIBDL
+FLAGS += -Idep/include/libpd -DHAVE_LIBDL -DPDINSTANCE -DPDTHREADS
 
 ifdef ARCH_WIN
 	# PD_INTERNAL leaves the function declarations for libpd unchanged
@@ -241,7 +241,7 @@ endif
 
 $(libpd):
 	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
-	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
+	cd dep/libpd && git checkout e3980d2fe45ef9eaaec1d45e4d68637eaf76a8b1
 
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
