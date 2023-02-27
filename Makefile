@@ -226,7 +226,7 @@ libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
 OBJECTS += $(libpd)
 DEPS += $(libpd)
-FLAGS += -Idep/include/libpd -DHAVE_LIBDL -DPDINSTANCE -DPDTHREADS
+FLAGS += -Idep/include/libpd -DHAVE_LIBDL
 
 ifdef ARCH_WIN
 	# PD_INTERNAL leaves the function declarations for libpd unchanged
