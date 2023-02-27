@@ -106,9 +106,13 @@ endif
 # SuperCollider
 ifeq ($(SUPERCOLLIDER), 1)
 SOURCES += src/SuperColliderEngine.cpp
-FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface
+FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface -Idep/supercollider/external_libraries/boost
 # FLAGS += -DSC_VCV_ENGINE_TIMING # uncomment to turn on timing printing while running
-supercollider := dep/supercollider/build/lang/libsclang.a
+ifdef ARCH_WIN
+	supercollider := dep/supercollider/build/lang/liblibsclang.a
+else
+	supercollider := dep/supercollider/build/lang/libsclang.a
+endif
 OBJECTS += $(supercollider)
 DEPS += $(supercollider)
 DISTRIBUTABLES += dep/supercollider/SCClassLibrary
@@ -117,16 +121,28 @@ SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=0 -DSC_EL=0 -DSC_VIM=0 -DSC_ED=0 -DSC_I
 SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio/portaudio_submodule external_libraries/yaml-cpp
 SUPERCOLLIDER_BRANCH := 3.13
 
-OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
-OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
+ifdef ARCH_WIN
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/windows/libhidapi.a
+endif
+ifdef ARCH_LIN
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
+endif
+ifdef ARCH_MAC
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/mac/libhidapi.a
+endif	
 OBJECTS += dep/supercollider/build/external_libraries/hidapi/hidapi_parser/libhidapi_parser.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_thread_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_system_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_regex_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_filesystem_lib.a
+OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
 OBJECTS += dep/supercollider/build/external_libraries/libyaml.a
 
-LDFLAGS += -lpthread -lasound -ludev
+ifdef ARCH_LIN	
+	LDFLAGS += -lpthread -lasound -ludev
+else
+	LDFLAGS += -lpthread
+endif
 
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 1
