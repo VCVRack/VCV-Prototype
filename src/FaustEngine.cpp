@@ -29,6 +29,10 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#if defined ARCH_WIN
+#include <fileapi.h>
+#include <windef.h>
+#endif
 
 #pragma GCC diagnostic push
 #ifndef __clang__
@@ -250,7 +254,7 @@ public:
 		std::string temp_cache = "/tmp/VCVPrototype_" + generateSHA1(script);
 #elif defined ARCH_WIN
 		char buf[MAX_PATH + 1] = {0};
-		GetTempPath(sizeof(buf), buf);
+		GetTempPathA(sizeof(buf), buf);
 		std::string temp_cache = std::string(buf) + "/VCVPrototype_" + generateSHA1(script);
 #endif
 		std::string error_msg;
