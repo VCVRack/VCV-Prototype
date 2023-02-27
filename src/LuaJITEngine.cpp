@@ -1,5 +1,5 @@
 #include "ScriptEngine.hpp"
-#include <luajit-2.0/lua.hpp>
+#include <luajit-2.1/lua.hpp>
 
 
 struct LuaJITEngine : ScriptEngine {
@@ -246,5 +246,5 @@ struct LuaJITEngine : ScriptEngine {
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<LuaJITEngine>("lua");
+	addScriptEngine<LuaJITEngine>(".lua");
 }

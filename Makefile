@@ -29,14 +29,33 @@ endif
 
 
 # Entropia File System Watcher
-efsw := dep/lib/libefsw-static-release.a
+ifeq (, $(shell which premake4))
+	ifeq (, $(shell which premake5))
+		$(error premake is not installed. Please install either premake4 or premake5)
+	else
+		PREMAKE = premake5
+	endif
+else
+	PREMAKE = premake4
+endif
+ifdef ARCH_WIN
+	efsw := dep/lib/efsw-static-release.lib
+else
+	efsw := dep/lib/libefsw-static-release.a
+endif
 DEPS += $(efsw)
 OBJECTS += $(efsw)
 $(efsw):
-	cd efsw && premake4 gmake
+	cd efsw && $(PREMAKE) gmake
+ifdef ARCH_WIN
+	cd efsw && $(MAKE) -C make/* config=release_x86_64 efsw-static-lib
+	mkdir -p dep/lib dep/include
+	cd efsw && cp lib/efsw-static-release.lib $(DEP_PATH)/lib/
+else
 	cd efsw && $(MAKE) -C make/* config=release efsw-static-lib
 	mkdir -p dep/lib dep/include
 	cd efsw && cp lib/libefsw-static-release.a $(DEP_PATH)/lib/
+endif
 	cd efsw && cp -R include/efsw $(DEP_PATH)/include/
 
 
@@ -74,45 +93,60 @@ endif
 # LuaJIT
 ifeq ($(LUAJIT), 1)
 SOURCES += src/LuaJITEngine.cpp
-luajit := dep/lib/libluajit-5.1.a
+luajit := dep/LuaJIT/src/libluajit.a
 OBJECTS += $(luajit)
 DEPS += $(luajit)
 $(luajit):
-	$(WGET) "http://luajit.org/download/LuaJIT-2.0.5.tar.gz"
-	$(SHA256) LuaJIT-2.0.5.tar.gz 874b1f8297c697821f561f9b73b57ffd419ed8f4278c82e05b48806d30c1e979
-	cd dep && $(UNTAR) ../LuaJIT-2.0.5.tar.gz
-	cd dep/LuaJIT-2.0.5 && $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
+	cd dep && git clone "https://github.com/LuaJIT/LuaJIT.git"
+	cd dep/LuaJIT && git checkout v2.1
+	cd dep/LuaJIT && MACOSX_DEPLOYMENT_TARGET=10.9 $(MAKE) BUILDMODE=static PREFIX="$(DEP_PATH)" install
 endif
 
 
 # SuperCollider
 ifeq ($(SUPERCOLLIDER), 1)
 SOURCES += src/SuperColliderEngine.cpp
-FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface
+FLAGS += -Idep/supercollider/include -Idep/supercollider/include/common -Idep/supercollider/lang -Idep/supercollider/common -Idep/supercollider/include/plugin_interface -Idep/supercollider/external_libraries/boost
 # FLAGS += -DSC_VCV_ENGINE_TIMING # uncomment to turn on timing printing while running
-supercollider := dep/supercollider/build/lang/libsclang.a
+ifdef ARCH_WIN
+	supercollider := dep/supercollider/build/lang/liblibsclang.a
+else
+	supercollider := dep/supercollider/build/lang/libsclang.a
+endif
 OBJECTS += $(supercollider)
 DEPS += $(supercollider)
 DISTRIBUTABLES += dep/supercollider/SCClassLibrary
 DISTRIBUTABLES += support/supercollider_extensions
 SUPERCOLLIDER_CMAKE_FLAGS += -DSUPERNOVA=0 -DSC_EL=0 -DSC_VIM=0 -DSC_ED=0 -DSC_IDE=0 -DSC_ABLETON_LINK=0 -DSC_QT=0 -DCMAKE_BUILD_TYPE=Release -DSCLANG_SERVER=0 -DBUILD_TESTING=0 -DNO_LIBSNDFILE=1
-SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio_sc_org external_libraries/yaml-cpp
-SUPERCOLLIDER_BRANCH := topic/vcv-prototype-support
+SUPERCOLLIDER_SUBMODULES += external_libraries/hidapi external_libraries/nova-simd external_libraries/nova-tt external_libraries/portaudio/portaudio_submodule external_libraries/yaml-cpp
+SUPERCOLLIDER_BRANCH := 3.13
 
-OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
-OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
+ifdef ARCH_WIN
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/windows/libhidapi.a
+endif
+ifdef ARCH_LIN
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/linux/libhidapi.a
+endif
+ifdef ARCH_MAC
+	OBJECTS += dep/supercollider/build/external_libraries/hidapi/mac/libhidapi.a
+endif	
 OBJECTS += dep/supercollider/build/external_libraries/hidapi/hidapi_parser/libhidapi_parser.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_thread_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_system_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_regex_lib.a
 OBJECTS += dep/supercollider/build/external_libraries/libboost_filesystem_lib.a
+OBJECTS += dep/supercollider/build/external_libraries/libtlsf.a
 OBJECTS += dep/supercollider/build/external_libraries/libyaml.a
 
-LDFLAGS += -lpthread -lasound -ludev
+ifdef ARCH_LIN	
+	LDFLAGS += -lpthread -lasound -ludev
+else
+	LDFLAGS += -lpthread
+endif
 
 $(supercollider):
 	cd dep && git clone "https://github.com/supercollider/supercollider" --branch $(SUPERCOLLIDER_BRANCH) --depth 1
-	cd dep/supercollider && git checkout 84b14d10d49edce6dd8303045a884fb7f2bc92e8
+	cd dep/supercollider && git checkout c64c5244c5e7bbcb26a829e9cf72d249a529c213
 	cd dep/supercollider && git submodule update --depth 1 --init -- $(SUPERCOLLIDER_SUBMODULES)
 	cd dep/supercollider && mkdir build
 	cd dep/supercollider/build && $(CMAKE) .. $(SUPERCOLLIDER_CMAKE_FLAGS)
@@ -195,8 +229,8 @@ SOURCES += src/VultEngine.cpp
 vult := dep/vult/vultc.h
 $(vult):
 	cd dep && mkdir -p vult
-	cd dep/vult && $(WGET) "https://github.com/modlfo/vult/releases/download/v0.4.12/vultc.h"
-	$(SHA256) $(vult) 3e80f6d30defe7df2804568f0314dbb33e6bf69d53d18a804c8b8132cf5ad146
+	cd dep/vult && $(WGET) "https://github.com/vult-dsp/vult/releases/download/v0.4.15/vultc.h"
+	$(SHA256) $(vult) 5c5e6c7c92caacc10dacd8e4dd5e8134b520e630562e1f928ab1332218266638
 FLAGS += -Idep/vult
 DEPS += $(vult)
 endif
@@ -208,7 +242,7 @@ libpd := dep/lib/libpd.a
 SOURCES += src/LibPDEngine.cpp
 OBJECTS += $(libpd)
 DEPS += $(libpd)
-FLAGS += -Idep/include/libpd -DHAVE_LIBDL
+FLAGS += -Idep/include/libpd -DHAVE_LIBDL -DPDINSTANCE -DPDTHREADS
 
 ifdef ARCH_WIN
 	# PD_INTERNAL leaves the function declarations for libpd unchanged
@@ -223,8 +257,8 @@ endif
 
 $(libpd):
 	cd dep && git clone "https://github.com/libpd/libpd.git" --recursive
-	cd dep/libpd && git checkout 5772a612527f06597d44d195843307ad0e3578fe
-	
+	cd dep/libpd && git checkout e3980d2fe45ef9eaaec1d45e4d68637eaf76a8b1
+
 ifdef ARCH_MAC
 	# libpd's Makefile is handmade, and it doesn't honor CFLAGS and LDFLAGS environments.
 	# So in order for Mac 10.15 (for example) to make a build that works on Mac 10.7+, we have to manually add DEP_MAC_SDK_FLAGS to CFLAGS and LDFLAGS.

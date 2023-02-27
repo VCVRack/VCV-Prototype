@@ -405,6 +405,6 @@ bool SC_VcvPrototypeClient::copyArrayOfFloatArrays(const PyrSlot& inSlot, const 
 
 __attribute__((constructor(1000)))
 static void constructor() {
-	addScriptEngine<SuperColliderEngine>("sc");
-	addScriptEngine<SuperColliderEngine>("scd");
+	addScriptEngine<SuperColliderEngine>(".sc");
+	addScriptEngine<SuperColliderEngine>(".scd");
 }
